@@ -1,7 +1,5 @@
 <img width="1280" height="460" alt="GoodSender MCP Banner" src="https://github.com/user-attachments/assets/b1b36e9b-85bd-490c-8576-2d9afb03d564" />
 
-# Official GoodSender MCP Server
-
 ## Features
 
 - 🛡️ Local server

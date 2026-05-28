@@ -86,6 +86,6 @@ Typical signals include:
 
 We do **not** intentionally collect email bodies, recipient addresses, or template contents as part of this telemetry.
 
-You can **opt out** of telemetry collection by setting `GOODSENDER_TELEMETRY_DISABLED=true` in the MCP server environment.
+You can **opt out** of telemetry collection by setting `GOODSENDER_TELEMETRY=false` in the MCP server environment.
 
 See the **[GoodSender Privacy Policy](https://joylabs.com/legal/privacy-policy)** for how personal data is handled by the service.

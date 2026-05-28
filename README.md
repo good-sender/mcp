@@ -74,6 +74,53 @@ docker compose up -d
   ```
   > _For other platforms you must reference a corresponding binary instead of `darwin` (macOS)_
 
+
+## Usage examples
+
+```md
+Add `John Doe <john.doe@example.com>` and `Jane Doe <jane.doe@example.com>` to the AI newsletter subscribers group
+```
+> This will:
+> - Create/update the recipients in the database
+> - Add them to the "AI newsletter subscribers" recipient group, creating it if needed
+
+```md
+Create a GoodSender template for a weekly AI news digest sent to the AI newsletter subscribers group
+```
+> This will:
+> - Create a draft email template in GoodSender format following best practices for email template creation
+> - Display interactive preview of this template draft (if AI client supports it)
+
+```md
+Increase the number of news in the digest to 5.
+```
+> Done during the template draft creation/editing, this will:
+> - Modify the template accordingly
+> - Display interactive preview of this template draft (if AI client supports it)
+
+```md
+Send a test email to me `Good Sender <good.sender@example.com>`
+```
+> Done during the template draft creation/editing, this will:
+> - Send an email with mocked data generated from the current template draft only to you
+
+```md
+Save the template as "Weekly AI news"
+```
+> Done during the template draft creation/editing, this will:
+> - Convert the current template draft to a persistent template stored in the local database
+> - Allow sending emails just by mentioning the template name
+
+```md
+Gather this week's AI news and send them using the "Weekly AI news" template
+```
+> This will:
+> - Create and enqueue a a personalized template-based email for each recipient in the AI newsletter subscribers group
+> - For all recipients who haven't received an email with consent request, will request their consent for receiving emails from you
+> - Send emails to all recipients who granted their email consent
+> - Monitor all recipients with pending consent and send the email as soon as they grant it
+
+
 ## Telemetry & privacy
 
 Telemetry is enabled by default. MCP server sends aggregate usage and reliability metrics to GoodSender to help improve the product.

@@ -20,10 +20,12 @@
 
 ### MCP Bundle (`.mcpb` file)
 
+> [!NOTE]
+> Not every AI client supports MCP bundles or local MCP servers yet.
+> Use a different installation method if nothing happens on double-click.
+
 - Grab the `goodsender.mcpb` file from the [latest release](https://github.com/good-sender/mcp/releases/latest).
 - Double-click the `goodsender.mcpb` file to open it in your AI client.
-  > _Not every AI client supports local MCP servers or MCP bundles yet._
-  > _Use a different installation method if nothing happens on double-click._
 
 ### Docker image / self-hosting
 
@@ -77,49 +79,60 @@ docker compose up -d
 
 ## Usage examples
 
-```md
-Add `John Doe <john.doe@example.com>` and `Jane Doe <jane.doe@example.com>` to the AI newsletter subscribers group
-```
-> This will:
+<details>
+<summary><code>Add `John Doe &lt;john.doe@example.com&gt;` and `Jane Doe &lt;jane.doe@example.com&gt;` to the AI newsletter subscribers group</code></summary>
+
+> ℹ️ This will:
 > - Create/update the recipients in the database
 > - Add them to the "AI newsletter subscribers" recipient group, creating it if needed
 
-```md
-Create a GoodSender template for a weekly AI news digest sent to the AI newsletter subscribers group
-```
-> This will:
+</details>
+
+<details>
+<summary><code>Create a GoodSender template for a weekly AI news digest sent to the AI newsletter subscribers group</code></summary>
+
+> ℹ️ This will:
 > - Create a draft email template in GoodSender format following best practices for email template creation
 > - Display interactive preview of this template draft (if AI client supports it)
 
-```md
-Increase the number of news in the digest to 5.
-```
-> Done during the template draft creation/editing, this will:
+</details>
+
+<details>
+<summary><code>Increase the number of news in the digest to 5</code></summary>
+
+> ℹ️ Done during the template draft creation/editing, this will:
 > - Modify the template accordingly
 > - Display interactive preview of this template draft (if AI client supports it)
 
-```md
-Send a test email to me `Good Sender <good.sender@example.com>`
-```
-> Done during the template draft creation/editing, this will:
+</details>
+
+<details>
+<summary><code>Send a test email to me: `Good Sender &lt;good.sender@example.com&gt;`</code></summary>
+
+> ℹ️ Done during the template draft creation/editing, this will:
 > - Send an email with mocked data generated from the current template draft only to you
 
-```md
-Save the template as "Weekly AI news"
-```
-> Done during the template draft creation/editing, this will:
+</details>
+
+<details>
+<summary><code>Save the template as "Weekly AI news"</code></summary>
+
+> ℹ️ Done during the template draft creation/editing, this will:
 > - Convert the current template draft to a persistent template stored in the local database
 > - Allow sending emails just by mentioning the template name
 
-```md
-Gather this week's AI news and send them using the "Weekly AI news" template
-```
-> This will:
+</details>
+
+<details>
+<summary><code>Gather this week's AI news and send them using the "Weekly AI news" template</code></summary>
+
+> ℹ️ This will:
 > - Create and enqueue a a personalized template-based email for each recipient in the AI newsletter subscribers group
 > - For all recipients who haven't received an email with consent request, will request their consent for receiving emails from you
 > - Send emails to all recipients who granted their email consent
 > - Monitor all recipients with pending consent and send the email as soon as they grant it
 
+</details>
 
 ## Telemetry & privacy
 

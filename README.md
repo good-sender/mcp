@@ -18,16 +18,28 @@
 
 ## Installation
 
-### MCP Bundle (`.mcpb` file)
+<details>
+<summary>
 
-> [!NOTE]
-> Not every AI client supports MCP bundles or local MCP servers yet.
-> Use a different installation method if nothing happens on double-click.
+### MCP Bundle (`.mcpb` file, easiest)
+
+</summary>
 
 - Grab the `goodsender.mcpb` file from the [latest release](https://github.com/good-sender/mcp/releases/latest).
 - Double-click the `goodsender.mcpb` file to open it in your AI client.
+  > *Note:*
+  >
+  > Not every AI client supports MCP bundles or local MCP servers yet.
+  > Use a different installation method if nothing happens on double-click.
+
+</details>
+
+<details>
+<summary>
 
 ### Docker image / self-hosting
+
+</summary>
 
 Run via
 ```sh
@@ -55,7 +67,14 @@ and run via
 docker compose up -d
 ```
 
-### Manual configuration
+</details>
+
+<details>
+<summary>
+
+### Manual configuration (JSON)
+
+</summary>
 
 - Grab the `binaries.zip` file from the [latest release](https://github.com/good-sender/mcp/releases/latest).
 - Unzip it somewhere you can easily reference.
@@ -76,6 +95,7 @@ docker compose up -d
   ```
   > _For other platforms you must reference a corresponding binary instead of `darwin` (macOS)_
 
+</details>
 
 ## Usage examples
 

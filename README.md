@@ -1,4 +1,4 @@
-<img width="1280" height="460" alt="GoodSender MCP banner" src="https://github.com/user-attachments/assets/8f26f913-eb4b-4c3a-b495-0cd2e3ea98ec" />
+<img width="1280" height="460" alt="GoodSender MCP banner" src="https://github.com/user-attachments/assets/0e4636a3-659c-4e28-ae2f-e52cdb5d4019" />
 
 ## Features
 

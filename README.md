@@ -99,10 +99,8 @@ docker compose up -d
 
 ## Usage examples
 
-
-<img width="490" height="674" alt="Example 2" src="https://github.com/user-attachments/assets/155f6fae-61f0-4e56-b503-174793f109e5" />
-<img width="490" height="674" alt="Example 3" src="https://github.com/user-attachments/assets/8916165a-68cc-4442-a49a-3f08e93da7ab" />
-
+<img width="441" height="607" alt="Example 2" src="https://github.com/user-attachments/assets/155f6fae-61f0-4e56-b503-174793f109e5" />
+<img width="441" height="607" alt="Example 3" src="https://github.com/user-attachments/assets/8916165a-68cc-4442-a49a-3f08e93da7ab" />
 
 <details>
 <summary><code>Add `John Doe &lt;john.doe@example.com&gt;` and `Jane Doe &lt;jane.doe@example.com&gt;` to the AI newsletter subscribers group</code></summary>

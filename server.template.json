@@ -1,0 +1,45 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.good-sender/goodsender-mcp",
+  "title": "GoodSender",
+  "description": "Free consent-based emailing and interactive email template design tools",
+  "version": "__VERSION__",
+  "websiteUrl": "https://goodsender.com",
+  "repository": {
+    "url": "https://github.com/good-sender/mcp",
+    "source": "github"
+  },
+  "packages": [
+    {
+      "registryType": "mcpb",
+      "identifier": "https://github.com/good-sender/mcp/releases/download/__RELEASE_TAG__/goodsender.mcpb",
+      "version": "__VERSION__",
+      "fileSha256": "__MCPB_SHA256__",
+      "transport": {
+        "type": "stdio"
+      }
+    },
+    {
+      "registryType": "oci",
+      "identifier": "docker.io/goodsender/goodsender-mcp:__VERSION__",
+      "transport": {
+        "type": "streamable-http",
+        "url": "http://localhost:9889/mcp"
+      },
+      "environmentVariables": [
+        {
+          "name": "GOODSENDER_API_KEY",
+          "description": "Your GoodSender API key (from the API Keys section of the GoodSender Console).",
+          "isRequired": true,
+          "isSecret": true
+        },
+        {
+          "name": "GOODSENDER_TELEMETRY",
+          "description": "Set to false to opt out of anonymous usage/reliability telemetry.",
+          "isRequired": false,
+          "isSecret": false
+        }
+      ]
+    }
+  ]
+}

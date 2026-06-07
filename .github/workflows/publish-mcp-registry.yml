@@ -1,0 +1,71 @@
+# .github/workflows/publish-mcp-registry.yml
+#
+# Publishes GoodSender to the official MCP Registry whenever you publish a
+# GitHub Release. The MCPB SHA-256 is computed automatically from the
+# released artifact and injected into server.json — you never hand-edit it.
+#
+# Auth uses GitHub Actions OIDC, so no tokens/secrets are needed to claim the
+# io.github.good-sender/* namespace (the workflow runs inside good-sender/mcp).
+#
+# Prereqs in the repo:
+#   - server.template.json   (at repo root)
+#   - scripts/gen-server-json.sh   (chmod +x)
+#   - Each OCI image pushed with the LABEL:
+#       io.modelcontextprotocol.server.name="io.github.good-sender/goodsender-mcp"
+
+name: Publish to MCP Registry
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to publish (e.g. v0.2.1)"
+        required: true
+
+permissions:
+  contents: read
+  id-token: write   # required for GitHub OIDC auth to the MCP Registry
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve release tag
+        id: tag
+        run: |
+          TAG="${{ github.event.release.tag_name || github.event.inputs.tag }}"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Download released .mcpb
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download "${{ steps.tag.outputs.tag }}" \
+            --repo "${{ github.repository }}" \
+            --pattern 'goodsender.mcpb' \
+            --output goodsender.mcpb
+
+      - name: Generate server.json (auto SHA-256)
+        run: |
+          chmod +x scripts/gen-server-json.sh
+          ./scripts/gen-server-json.sh goodsender.mcpb "${{ steps.tag.outputs.tag }}"
+          cat server.json
+
+      - name: Install mcp-publisher
+        run: |
+          # Pulls the latest mcp-publisher CLI. Confirm the asset name against
+          # https://github.com/modelcontextprotocol/registry/releases if it changes.
+          curl -fsSL \
+            "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_linux_amd64.tar.gz" \
+            | tar -xz mcp-publisher
+          sudo install -m 0755 mcp-publisher /usr/local/bin/mcp-publisher
+          mcp-publisher --version || true
+
+      - name: Authenticate (GitHub OIDC) and publish
+        run: |
+          mcp-publisher login github-oidc
+          mcp-publisher publish

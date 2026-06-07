@@ -3,6 +3,8 @@
 
 FROM alpine:3.21
 
+LABEL io.modelcontextprotocol.server.name="io.github.good-sender/goodsender-mcp"
+
 ARG TARGETARCH
 
 RUN apk add --no-cache ca-certificates wget \

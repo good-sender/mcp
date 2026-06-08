@@ -1,7 +1,16 @@
-# Builds and pushes ghcr.io/good-sender/mcp and docker.io/goodsender/goodsender-mcp from binaries.zip on this repo's published releases.
-# Triggered when the source repo mirrors a release here (draft → assets → publish).
+# Publishes a GitHub Release: container images first, then MCP Registry.
+#
+# Auth uses GitHub Actions OIDC, so no tokens/secrets are needed to claim the
+# io.github.good-sender/* namespace (the workflow runs inside good-sender/mcp).
+#
+# Containers: ghcr.io/good-sender/mcp, docker.io/goodsender/goodsender-mcp
+# Registry: MCPB + OCI packages (registry validates the Docker image exists)
+#
+# Prereqs:
+#   - server.template.json, scripts/gen-server-json.sh
+#   - Dockerfile LABEL io.modelcontextprotocol.server.name="io.github.good-sender/goodsender-mcp"
 
-name: Publish container
+name: Publish release
 
 on:
   release:
@@ -14,20 +23,24 @@ on:
         type: string
 
 concurrency:
-  group: publish-container-${{ github.event.release.tag_name || inputs.ref }}
+  group: publish-release-${{ github.event.release.tag_name || inputs.ref }}
   cancel-in-progress: true
 
 permissions:
   contents: read
   packages: write
+  id-token: write    # required for GitHub OIDC auth to the MCP Registry
 
 env:
   BINARIES_ASSET_NAME: binaries.zip
 
 jobs:
-  publish:
+  publish-container:
     if: github.event_name == 'workflow_dispatch' || startsWith(github.event.release.tag_name, 'v')
     runs-on: ubuntu-latest
+    outputs:
+      ref: ${{ steps.in.outputs.ref }}
+      version: ${{ steps.in.outputs.version }}
     steps:
       - uses: actions/checkout@v6
         with:
@@ -126,7 +139,7 @@ jobs:
           VERSION: ${{ steps.in.outputs.version }}
         run: |
           {
-            echo "## Published"
+            echo "## Published containers"
             echo "- \`ghcr.io/good-sender/mcp:latest\`"
             echo "- \`ghcr.io/good-sender/mcp:${VERSION}\`"
             echo "- \`ghcr.io/good-sender/mcp:${REF}\`"
@@ -134,3 +147,38 @@ jobs:
             echo "- \`docker.io/goodsender/goodsender-mcp:${VERSION}\`"
             echo "- \`docker.io/goodsender/goodsender-mcp:${REF}\`"
           } >> "$GITHUB_STEP_SUMMARY"
+
+  publish-mcp-registry:
+    needs: publish-container
+    if: github.event_name == 'workflow_dispatch' || startsWith(github.event.release.tag_name, 'v')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Download released .mcpb
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download "${{ needs.publish-container.outputs.ref }}" \
+            --repo "${{ github.repository }}" \
+            --pattern 'goodsender.mcpb' \
+            --output goodsender.mcpb
+
+      - name: Generate server.json (auto SHA-256)
+        run: |
+          chmod +x scripts/gen-server-json.sh
+          ./scripts/gen-server-json.sh goodsender.mcpb "${{ needs.publish-container.outputs.ref }}"
+          cat server.json
+
+      - name: Install mcp-publisher
+        run: |
+          curl -fsSL \
+            "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_linux_amd64.tar.gz" \
+            | tar -xz mcp-publisher
+          sudo install -m 0755 mcp-publisher /usr/local/bin/mcp-publisher
+          mcp-publisher --version || true
+
+      - name: Authenticate (GitHub OIDC) and publish
+        run: |
+          mcp-publisher login github-oidc
+          mcp-publisher publish

@@ -18,8 +18,7 @@ RUN chmod +x /usr/local/bin/goodsender-mcp
 
 USER goodsender
 
-ENV GOODSENDER_HTTP_PORT=9889 \
-	GOODSENDER_DB_FILE=/data/goodsender.sqlite \
+ENV GOODSENDER_PUBLIC_SERVER_PORT=9889 \
 	GOODSENDER_DATA_DIR=/data
 
 EXPOSE 9889

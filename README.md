@@ -23,7 +23,7 @@
 
   - Grab the `goodsender.mcpb` file from the [latest release](https://github.com/good-sender/mcp/releases/latest).
   - Double-click the `goodsender.mcpb` file to open it in your AI client.<br/>
-      
+
     > *Note:*
     > Not every AI client supports MCP bundles or local MCP servers yet.
     > Use a different installation method if nothing happens on double-click.
@@ -35,9 +35,9 @@
 
   Run via
   ```sh
-  docker run -d -e GOODSENDER_API_KEY=<Your API Key> ghcr.io/good-sender/mcp:latest
+  docker run -d -e GOODSENDER_API_KEY=<Your API Key> -v goodsender-mcp-data:/data ghcr.io/good-sender/mcp:latest
   ```
-  
+
   or add to `docker-compose.yaml` on your home server
   ```yaml
   services:
@@ -50,7 +50,7 @@
       volumes:
         - goodsender-mcp-data:/data
       restart: unless-stopped
-  
+
   volumes:
     goodsender-mcp-data:
   ```
@@ -64,7 +64,7 @@
 <details>
   <summary><b>Manual configuration (JSON)</b></summary>
 
-  - Grab the `binaries.zip` file from the [latest release](https://github.com/good-sender/mcp/releases/latest).
+  - Grab the `binaries.zip` file from the [latest release](https://github.com/good-sender/mcp/releases/latest) (includes MCP `goodsender-mcp-*` and CLI `goodsender-*` binaries).
   - Unzip it somewhere you can easily reference.
   - Modify your AI client config file, adding the MCP server configuration (example for Claude Desktop and Cursor on macOS):
     ```json
@@ -99,21 +99,21 @@
   > ℹ️ This will:
   > - Create a draft email template in GoodSender format following best practices for email template creation
   > - Display interactive preview of this template draft (if AI client supports it)
-    
+
   #### Increase the number of news in the digest to 5
   > ℹ️ Done during the template draft creation/editing, this will:
   > - Modify the template accordingly
   > - Display interactive preview of this template draft (if AI client supports it)
-    
+
   #### Send a test email to me: 'Good Sender &lt;good.sender@example.com&gt;'
   > ℹ️ Done during the template draft creation/editing, this will:
   > - Send an email with mocked data generated from the current template draft only to you
-    
+
   #### Save the template as "Weekly AI news"
   > ℹ️ Done during the template draft creation/editing, this will:
   > - Convert the current template draft to a persistent template stored in the local database
   > - Allow sending emails just by mentioning the template name
-    
+
   #### Gather this week's AI news and send them using the "Weekly AI news" template
   > ℹ️ This will:
   > - Create and enqueue a a personalized template-based email for each recipient in the AI newsletter subscribers group

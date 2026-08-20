@@ -38,6 +38,8 @@
   docker run -d -e GOODSENDER_API_KEY=<Your API Key> -v goodsender-mcp-data:/data ghcr.io/good-sender/mcp:latest
   ```
 
+  If your goal is to run the agent using this MCP fully autonomously, set `GOODSENDER_DISABLE_ACTION_GUARDS=true` to skip all action confirmations completely. See [Action confirmation](#action-confirmation).
+
   or add to `docker-compose.yaml` on your home server
   ```yaml
   services:
@@ -47,6 +49,7 @@
         - "9889:9889"
       environment:
         GOODSENDER_API_KEY: <Your API Key>
+        # GOODSENDER_DISABLE_ACTION_GUARDS: "true"  # skip all action confirmations
       volumes:
         - goodsender-mcp-data:/data
       restart: unless-stopped
@@ -83,7 +86,15 @@
     ```
     > _For other platforms you must reference a corresponding binary instead of `darwin` (macOS)_
 
+    If your goal is to run the agent using this MCP fully autonomously, set `GOODSENDER_DISABLE_ACTION_GUARDS=true` to skip all action confirmations completely. See [Action confirmation](#action-confirmation).
+
 </details>
+
+## Action confirmation
+
+By default, mutating tools (create, publish, send, and similar) do not run immediately. They return a confirmation token. The agent must call `confirm_action` after you approve.
+
+Set `GOODSENDER_DISABLE_ACTION_GUARDS=true` in the MCP server environment to skip that step. Tools then run when the client calls them. Use this for unattended loops (Cowork schedules, CI). Leave it unset if you want every send and publish to wait for your approval in the chat.
 
 ## Examples
 

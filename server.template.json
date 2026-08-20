@@ -38,6 +38,12 @@
           "description": "Set to false to opt out of anonymous usage/reliability telemetry.",
           "isRequired": false,
           "isSecret": false
+        },
+        {
+          "name": "GOODSENDER_DISABLE_ACTION_GUARDS",
+          "description": "Set to true so mutating tools run immediately without asking for action confirmation. Use for unattended agent loops (for example Claude Cowork on a schedule). Default false: publish and send wait for confirmation.",
+          "isRequired": false,
+          "isSecret": false
         }
       ]
     }

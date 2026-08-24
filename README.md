@@ -15,6 +15,7 @@
 - 👥 Organize recipients into groups and reference them all by group name.
 - 🏷️ Manage sender identities (`From:` header) and reference them by name.
 - 📊 Monitor email health metrics.
+- 📰 Maintain the blog: settings, custom domain, drafts, publish, preview, and email broadcast.
 
 ## Installation
 
@@ -131,6 +132,13 @@ Set `GOODSENDER_DISABLE_ACTION_GUARDS=true` in the MCP server environment to ski
   > - For all recipients who haven't received an email with consent request, will request their consent for receiving emails from you
   > - Send emails to all recipients who granted their email consent
   > - Monitor all recipients with pending consent and send the email as soon as they grant it
+
+  #### Publish a blog post 'Why consent-based emailing wins' and email it to the AI newsletter subscribers group
+  > ℹ️ This will:
+  > - Create a draft post from the title and body
+  > - Show a signed preview URL
+  > - Publish the post
+  > - Broadcast it to the group (consent flow still applies)
 
 </details>
 

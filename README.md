@@ -1,21 +1,22 @@
-<img width="1280" height="460" alt="GoodSender MCP banner" src="https://github.com/user-attachments/assets/0e4636a3-659c-4e28-ae2f-e52cdb5d4019" />
+# GoodSender MCP
+
+Connect your assistant to GoodSender, the AI-first blog platform. Your blog, newsletter, and audience in one place. Keep your voice, review your work, and publish to the destinations you approve.
 
 ## Features
 
-- 🛡️ Local server
-  - Email contents, custom templates, recipient groups and sender identities are stored only on your machine.
-- ✉️ Send emails in **plain text**, **HTML** or **Markdown** to one or more recipients.
-- ✅ Send **consentless** transactional emails using built-in templates (OTP, MFA, Order Completion, etc.)
-- 🤝 Automatic consent flow handling.
-  - Recipients added via MCP receive the consent email.
-  - Emails are queued locally until recipient grants the consent to receive them.
-- 📝 Create, edit and store custom templates with dynamic variables.
-  - Interactive template previews for quick design iteration.
-  - Send test email to verify template rendering.
-- 👥 Organize recipients into groups and reference them all by group name.
-- 🏷️ Manage sender identities (`From:` header) and reference them by name.
-- 📊 Monitor email health metrics.
-- 📰 Maintain the blog: settings, custom domain, drafts, publish, preview, and email broadcast.
+- Draft, edit, and preview posts, then publish on your own domain.
+- Choose newsletter, social announcement, and article republishing destinations before publishing.
+- Manage blog settings, custom domains, and blog designs.
+- Send custom email in plain text, HTML, or Markdown with recipient consent.
+- Send transactional email using built-in templates for OTP, MFA, order receipts, and other supported messages.
+- Create custom email templates with dynamic variables, interactive previews, and test sends.
+- Manage recipients, recipient groups, and sender identities; monitor email health.
+
+MCP provides the connection. The optional [goodsender-blog skill](https://github.com/good-sender/skills) adds an editorial workflow for your voice, fact checks, images, and sharing copy. You can also write in the GoodSender editor or connect through the CLI or API.
+
+Pending emails, custom templates, recipient groups, and sender identities are stored on the MCP server host: your machine for a local installation, or the server host for a hosted connection. Sending and recipient synchronization use the GoodSender API. Blog posts, settings, and designs are stored on GoodSender servers.
+
+Action confirmations are enabled by default; see [Action confirmation](#action-confirmation) for explicitly configured unattended operation.
 
 ## Installation
 

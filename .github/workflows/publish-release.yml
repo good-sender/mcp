@@ -1,5 +1,13 @@
 # Publishes a GitHub Release: container images first, then MCP Registry.
 #
+# Two stages, each ending in a hosted MCP deploy (good-sender/hosted-mcp-deployment,
+# whose Cloud Build triggers deploy `main` → dev and `production` → prod):
+#   - dev:  repository_dispatch `draft-release` (sent by goodsender-mcp-go once the
+#           draft here has its assets). Version tags only (no :latest), no
+#           Registry; commits the image pin to hosted-mcp-deployment `main`.
+#   - prod: release published (or workflow_dispatch). Adds :latest, publishes to
+#           the Registry; merges the dev pin commit into `production`.
+#
 # Auth uses GitHub Actions OIDC, so no tokens/secrets are needed to claim the
 # io.github.good-sender/* namespace (the workflow runs inside good-sender/mcp).
 #
@@ -9,12 +17,16 @@
 # Prereqs:
 #   - server.template.json, scripts/gen-server-json.sh
 #   - Dockerfile LABEL io.modelcontextprotocol.server.name="io.github.good-sender/goodsender-mcp"
+#   - SDK_DISPATCH_APP_ID / SDK_DISPATCH_APP_PRIVATE_KEY, with the App installed
+#     on hosted-mcp-deployment (contents: write)
 
 name: Publish release
 
 on:
   release:
     types: [published]
+  repository_dispatch:
+    types: [draft-release]
   workflow_dispatch:
     inputs:
       ref:
@@ -23,7 +35,7 @@ on:
         type: string
 
 concurrency:
-  group: publish-release-${{ github.event.release.tag_name || inputs.ref }}
+  group: publish-release-${{ github.event_name }}-${{ github.event.release.tag_name || inputs.ref || github.event.client_payload.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -36,11 +48,15 @@ env:
 
 jobs:
   publish-container:
-    if: github.event_name == 'workflow_dispatch' || startsWith(github.event.release.tag_name, 'v')
+    if: github.event_name != 'release' || startsWith(github.event.release.tag_name, 'v')
     runs-on: ubuntu-latest
+    permissions:
+      contents: write    # GITHUB_TOKEN only sees draft releases with write access
+      packages: write
     outputs:
       ref: ${{ steps.in.outputs.ref }}
       version: ${{ steps.in.outputs.version }}
+      stage: ${{ steps.in.outputs.stage }}
     steps:
       - uses: actions/checkout@v6
         with:
@@ -50,37 +66,51 @@ jobs:
         id: in
         env:
           INPUT_REF: ${{ inputs.ref }}
+          DISPATCH_REF: ${{ github.event.client_payload.ref }}
         run: |
           set -euo pipefail
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            ref="$INPUT_REF"
-          else
-            ref="${{ github.event.release.tag_name }}"
-          fi
-          if [[ -z "$ref" ]]; then
-            echo "!! ref is required" >&2
+          stage=prod
+          case "${{ github.event_name }}" in
+            workflow_dispatch) ref="$INPUT_REF" ;;
+            repository_dispatch) ref="$DISPATCH_REF"; stage=dev ;;
+            *) ref="${{ github.event.release.tag_name }}" ;;
+          esac
+          if [[ ! "$ref" =~ ^v[0-9] ]]; then
+            echo "!! ref must be a v* tag (got: '$ref')" >&2
             exit 1
           fi
+          version="${ref#v}"
+          tags=""
+          for repo in ghcr.io/good-sender/mcp docker.io/goodsender/goodsender-mcp; do
+            [[ "$stage" == "prod" ]] && tags+="${repo}:latest"$'\n'
+            tags+="${repo}:${version}"$'\n'"${repo}:${ref}"$'\n'
+          done
           {
             echo "ref=$ref"
-            echo "version=${ref#v}"
+            echo "version=$version"
+            echo "stage=$stage"
+            echo "tags<<EOF"
+            printf '%s' "$tags"
+            echo "EOF"
           } >> "$GITHUB_OUTPUT"
 
       - name: Resolve and download release binaries
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REF: ${{ steps.in.outputs.ref }}
+          STAGE: ${{ steps.in.outputs.stage }}
         run: |
           set -euo pipefail
-          release_json="$(gh api "repos/${{ github.repository }}/releases/tags/${REF}")"
-          draft="$(jq -r '.draft' <<<"$release_json")"
-          if [[ "$draft" != "false" ]]; then
-            echo "!! release $REF is draft" >&2
+          # Not releases/tags/<tag>: that endpoint never returns drafts.
+          release_json="$(gh api "repos/${{ github.repository }}/releases?per_page=100" \
+            --jq "map(select(.tag_name == \"${REF}\"))[0]")"
+          if [[ -z "$release_json" || "$release_json" == "null" ]]; then
+            echo "!! no release for $REF" >&2
             exit 1
           fi
-          tag_name="$(jq -r '.tag_name' <<<"$release_json")"
-          if [[ "$tag_name" != "$REF" ]]; then
-            echo "!! release tag mismatch: expected $REF, got $tag_name" >&2
+          draft="$(jq -r '.draft' <<<"$release_json")"
+          if [[ "$STAGE" == "prod" && "$draft" != "false" ]]; then
+            echo "!! release $REF is draft" >&2
             exit 1
           fi
           asset_url="$(jq -r --arg name "$BINARIES_ASSET_NAME" \
@@ -125,32 +155,82 @@ jobs:
           file: Dockerfile
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: |
-            ghcr.io/good-sender/mcp:latest
-            ghcr.io/good-sender/mcp:${{ steps.in.outputs.version }}
-            ghcr.io/good-sender/mcp:${{ steps.in.outputs.ref }}
-            docker.io/goodsender/goodsender-mcp:latest
-            docker.io/goodsender/goodsender-mcp:${{ steps.in.outputs.version }}
-            docker.io/goodsender/goodsender-mcp:${{ steps.in.outputs.ref }}
+          tags: ${{ steps.in.outputs.tags }}
 
       - name: Summary
         env:
-          REF: ${{ steps.in.outputs.ref }}
-          VERSION: ${{ steps.in.outputs.version }}
+          TAGS: ${{ steps.in.outputs.tags }}
         run: |
           {
             echo "## Published containers"
-            echo "- \`ghcr.io/good-sender/mcp:latest\`"
-            echo "- \`ghcr.io/good-sender/mcp:${VERSION}\`"
-            echo "- \`ghcr.io/good-sender/mcp:${REF}\`"
-            echo "- \`docker.io/goodsender/goodsender-mcp:latest\`"
-            echo "- \`docker.io/goodsender/goodsender-mcp:${VERSION}\`"
-            echo "- \`docker.io/goodsender/goodsender-mcp:${REF}\`"
+            sed 's/.*/- `&`/' <<<"$TAGS"
           } >> "$GITHUB_STEP_SUMMARY"
+
+  # Pins the image in hosted-mcp-deployment; its Cloud Build triggers deploy.
+  # dev: commit the pin to `main`. prod: merge that same pin commit into
+  # `production`, so prod gets exactly what dev ran (plus nothing newer).
+  deploy-hosted:
+    needs: publish-container
+    runs-on: ubuntu-latest
+    steps:
+      - name: Mint token for hosted-mcp-deployment
+        id: app_token
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ secrets.SDK_DISPATCH_APP_ID }}
+          private-key: ${{ secrets.SDK_DISPATCH_APP_PRIVATE_KEY }}
+          owner: good-sender
+          repositories: hosted-mcp-deployment
+
+      - uses: actions/checkout@v6
+        with:
+          repository: good-sender/hosted-mcp-deployment
+          token: ${{ steps.app_token.outputs.token }}
+          fetch-depth: 0
+
+      - name: Pin and push
+        env:
+          STAGE: ${{ needs.publish-container.outputs.stage }}
+          REF: ${{ needs.publish-container.outputs.ref }}
+          BOT: ${{ steps.app_token.outputs.app-slug }}[bot]
+        run: |
+          set -euo pipefail
+          git config user.name "$BOT"
+          git config user.email "${BOT}@users.noreply.github.com"
+          image="ghcr.io/good-sender/mcp:${REF}"
+          pin_file=ansible/group_vars/all.yml
+
+          if [[ "$STAGE" == "dev" ]]; then
+            sed -i -E "s|^mcp_image: .*|mcp_image: \"${image}\"|" "$pin_file"
+            if git diff --quiet; then
+              echo "main already pins $image"
+            else
+              git commit -am "all.yml: pin MCP image ${REF}"
+              git push origin HEAD:main
+            fi
+          else
+            # Newest commit that sets the pin (-S also matches the one replacing it).
+            pin_line="mcp_image: \"${image}\""
+            pin_commit=""
+            for c in $(git log origin/main --format=%H -S "$pin_line" -- "$pin_file"); do
+              if git show "${c}:${pin_file}" | grep -qxF "$pin_line"; then
+                pin_commit="$c"
+                break
+              fi
+            done
+            if [[ -z "$pin_commit" ]]; then
+              echo "!! no commit on main pins $image — was it deployed to dev?" >&2
+              exit 1
+            fi
+            git checkout production
+            git merge --no-edit "$pin_commit" -m "Release ${REF} to production"
+            git push origin production
+          fi
+          echo "## Hosted MCP ${STAGE}: \`${image}\`" >> "$GITHUB_STEP_SUMMARY"
 
   publish-mcp-registry:
     needs: publish-container
-    if: github.event_name == 'workflow_dispatch' || startsWith(github.event.release.tag_name, 'v')
+    if: needs.publish-container.outputs.stage == 'prod'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6

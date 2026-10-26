@@ -2,26 +2,32 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.good-sender/goodsender-mcp",
   "title": "GoodSender",
-  "description": "Free consent-based emailing and interactive email template design tools",
-  "version": "0.2.1",
+  "description": "Publish blog posts and newsletters from Claude, Claude Code, Codex and ChatGPT. Hosted or local.",
+  "version": "0.8.2",
   "websiteUrl": "https://goodsender.com",
   "repository": {
     "url": "https://github.com/good-sender/mcp",
     "source": "github"
   },
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://mcp.goodsender.com/"
+    }
+  ],
   "packages": [
     {
       "registryType": "mcpb",
-      "identifier": "https://github.com/good-sender/mcp/releases/download/v0.2.1/goodsender.mcpb",
-      "version": "0.2.1",
-      "fileSha256": "b692a69ff8dd0abfaa8db713b3f59293afe7a9c8245a52410c99763bb9c189e3",
+      "identifier": "https://github.com/good-sender/mcp/releases/download/v0.8.2/goodsender.mcpb",
+      "version": "0.8.2",
+      "fileSha256": "42eb8687c4e7d171468323502310c591f2d30e4ef808074c42333622c4ba9064",
       "transport": {
         "type": "stdio"
       }
     },
     {
       "registryType": "oci",
-      "identifier": "docker.io/goodsender/goodsender-mcp:0.2.1",
+      "identifier": "docker.io/goodsender/goodsender-mcp:0.8.2",
       "transport": {
         "type": "streamable-http",
         "url": "http://localhost:9889/mcp"

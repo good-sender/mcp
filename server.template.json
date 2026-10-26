@@ -2,13 +2,19 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.good-sender/goodsender-mcp",
   "title": "GoodSender",
-  "description": "Free consent-based emailing, blog publishing, and interactive email template design tools",
+  "description": "Publish blog posts and newsletters from Claude, Claude Code, Codex and ChatGPT. Hosted or local.",
   "version": "__VERSION__",
   "websiteUrl": "https://goodsender.com",
   "repository": {
     "url": "https://github.com/good-sender/mcp",
     "source": "github"
   },
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://mcp.goodsender.com/"
+    }
+  ],
   "packages": [
     {
       "registryType": "mcpb",

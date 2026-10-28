@@ -277,8 +277,8 @@ GoodSender sends email as well as blog posts. Permission protects deliverability
 | `edit_sender_identity` | Change a sender identity's display name. |
 | `list_sender_identities` | List sender identities and whether each domain is verified. |
 | `check_sender_domain_stats` | Show email health metrics for each sender domain. Read-only. |
-
-`confirm_action` runs an action you approved, for both blog and email tools. It is present only on a local server with action guards on (see [Action confirmation](#action-confirmation)).
+| **Action confirmation (blog and email)** | |
+| `confirm_action` | Run an action you approved, for both blog and email tools. Present only on a local server with action guards on (see [Action confirmation](#action-confirmation)). |
 
 ## FAQ
 

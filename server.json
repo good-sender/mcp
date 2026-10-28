@@ -2,8 +2,8 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.good-sender/goodsender-mcp",
   "title": "GoodSender",
-  "description": "Publish blog posts and newsletters from Claude, Claude Code, Codex and ChatGPT. Hosted or local.",
-  "version": "0.8.2",
+  "description": "Publish blog posts, send newsletters and emails from Claude, Claude Code, Codex and ChatGPT.",
+  "version": "0.8.3",
   "websiteUrl": "https://goodsender.com",
   "repository": {
     "url": "https://github.com/good-sender/mcp",
@@ -18,16 +18,16 @@
   "packages": [
     {
       "registryType": "mcpb",
-      "identifier": "https://github.com/good-sender/mcp/releases/download/v0.8.2/goodsender.mcpb",
-      "version": "0.8.2",
-      "fileSha256": "42eb8687c4e7d171468323502310c591f2d30e4ef808074c42333622c4ba9064",
+      "identifier": "https://github.com/good-sender/mcp/releases/download/v0.8.3/goodsender.mcpb",
+      "version": "0.8.3",
+      "fileSha256": "9cc6447454c6d5ecab5de592ef8fd3b7958aeaec75448d9d7a7abde10dcf1fb2",
       "transport": {
         "type": "stdio"
       }
     },
     {
       "registryType": "oci",
-      "identifier": "docker.io/goodsender/goodsender-mcp:0.8.2",
+      "identifier": "docker.io/goodsender/goodsender-mcp:0.8.3",
       "transport": {
         "type": "streamable-http",
         "url": "http://localhost:9889/mcp"

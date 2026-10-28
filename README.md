@@ -1,6 +1,7 @@
 # GoodSender MCP Server
 
-Publish blog posts to your own domain and send them as newsletters from Claude, Claude Code, Codex or ChatGPT.
+Publish blog posts, send newsletters and emails from Claude, Claude Code, Codex and ChatGPT.
+Send consent-based email and transactional email (OTP and MFA codes), and publish blog posts on your own domain.
 Connect to the hosted server with OAuth and nothing to install, or run it locally with an API key.
 
 ## What you can do
@@ -11,9 +12,12 @@ Ask your assistant things like:
 - "Draft a post from these notes and show me the preview before anything goes live."
 - "Connect blog.example.com to my blog and tell me which DNS records to add."
 - "Create a custom design for my blog that matches our logo, and show me a preview first."
+- "Send a password reset code to user@example.com with the OTP template."
+- "Email the March update to the beta-users group."
 
 Posts are always created as drafts. Before publishing, the assistant shows where the post will go (your blog, the newsletter, connected social accounts) and asks you to confirm, unless you turned [action confirmation](#action-confirmation) off.
 The newsletter email carries the subject, the cover image when one is set, a summary and a link to the published post, not the full post body.
+Transactional templates such as OTP codes send right away. Other emails wait until the recipient consents. See [Email sending](#email-sending).
 
 ## Quick start (hosted, OAuth)
 
@@ -147,127 +151,19 @@ By default, tools that publish, send, delete or change the live blog design do n
 
 Set `GOODSENDER_DISABLE_ACTION_GUARDS=true` in the MCP server environment to skip that step. Tools then run when the client calls them. Use this for unattended loops (scheduled agents, CI). Leave it unset if you want every send and publish to wait for your approval in the chat.
 
-## Tools
+## Email sending
 
-### Blog posts and newsletter
+GoodSender sends email as well as blog posts. Permission protects deliverability, so cold outreach is not supported. Email tools work with the hosted server and with a local server.
 
-| Tool | What it does |
-|---|---|
-| `list_posts` | List all posts, drafts and published, with the blog's byline and taxonomy. |
-| `get_post` | Get one post, including its markdown body. |
-| `create_post` | Create a draft post. It never publishes or sends. |
-| `edit_post` | Change a draft or published post. |
-| `delete_post` | Permanently delete a post. |
-| `create_post_preview` | Create a signed preview URL for a draft or published post. |
-| `upload_post_image` | Upload an image (JPEG, PNG, GIF or WebP) for a post and get back its URL. |
-| `get_post_distribution` | Show where a post goes when published: the newsletter and the dev.to, X, LinkedIn, Bluesky and Mastodon destinations. |
-| `set_post_distribution` | Choose those destinations and review their text, newsletter subject and summary. |
-| `publish_post` | Publish the post to the public blog, then act on its distribution plan. |
-| `send_post_test` | Send a test email of the post to one inbox. |
-| `broadcast_post` | Email a published post's newsletter to consented subscribers, at most once per post. |
-| `reannounce_post` | Post a published post to one announce destination (X, LinkedIn, Bluesky or Mastodon) again. |
-
-### Blog settings and custom domain
-
-| Tool | What it does |
-|---|---|
-| `get_blog` | Get blog settings (title, description, sender, theme, custom domain) and whether a custom design is live. |
-| `update_blog` | Create or change blog settings, including SEO title and description. |
-| `connect_blog_domain` | Claim a custom hostname for the blog and get the DNS records to add. |
-| `get_blog_custom_domain` | Check custom domain status and DNS targets. |
-| `remove_blog_custom_domain` | Remove the blog's custom domain. |
-
-### Blog design
-
-| Tool | What it does |
-|---|---|
-| `blog_design_template_format` | Documentation for the blog design template format. |
-| `blog_design_list` | List saved designs, flagging the active one and the stock one. |
-| `blog_design_create` | Create a new design from templates and images. |
-| `blog_design_edit` | Edit a design's templates. |
-| `blog_design_get_latest_checkpoint` | Get the latest version of a design. |
-| `blog_design_checkpoint_list` | List the versions of a design. |
-| `blog_design_checkpoint_restore` | Go back to an earlier version, deleting the newer ones. |
-| `blog_design_save` | Keep a version and delete the older ones. |
-| `blog_design_activate` | Make a saved design the live design of the blog. |
-| `blog_design_image_upload_url` | Get an upload URL for a logo or favicon. |
-
-### Email
-
-| Tool | What it does |
-|---|---|
-| `enqueue_email` | Queue an email in plain text, HTML or Markdown. It is sent once the recipient consents. |
-| `enqueue_template_email` | Queue a template-based email. It is sent once the recipient consents. |
-| `send_consentless_email` | Send a built-in transactional template (OTP, MFA, order completion and similar) right away. |
-| `send_template_draft_test_email` | Send a test email from a template draft to one recipient. |
-
-### Email templates
-
-| Tool | What it does |
-|---|---|
-| `template_format` | Documentation for the email template format. |
-| `create_template_draft` | Start a new template draft. |
-| `edit_template` | Edit a template or draft with search-and-replace changes. |
-| `get_template` | Get a saved template by name. |
-| `get_template_content` | Get a template's current content, including unsaved edits. |
-| `render_template_preview` | Render a template preview with sample data. |
-| `save_template` | Save a template draft. |
-| `list_templates` | List email templates. |
-| `delete_template` | Delete a template and the emails created from it. |
-
-### Recipients, groups and senders
-
-| Tool | What it does |
-|---|---|
-| `create_recipients` | Add recipients and request their consent. |
-| `list_recipients` | List recipients with group memberships and consent status. |
-| `edit_recipient` | Change a recipient's display name. |
-| `delete_recipients` | Permanently delete recipients and their emails. |
-| `create_group` | Create a recipient group. |
-| `list_groups` | List recipient groups. |
-| `add_group_members` | Add recipients to a group. |
-| `remove_group_members` | Remove recipients from a group. |
-| `create_sender_identity` | Create a `From:` identity on a verified domain. |
-| `edit_sender_identity` | Change a sender identity's display name. |
-| `list_sender_identities` | List sender identities and whether each domain is verified. |
-| `check_sender_domain_stats` | Show email health metrics for each sender domain. |
-
-### Confirmation
-
-| Tool | What it does |
-|---|---|
-| `confirm_action` | Run an action you approved. Present only while action confirmation is on. |
-
-## FAQ
-
-**Is there a blog platform with an official MCP server?**
-Yes. GoodSender publishes this server for its blog platform. Connect the hosted server at `https://mcp.goodsender.com/` with OAuth, or run it locally. See the [MCP connection guide](https://goodsender.com/docs/mcp/).
-
-**How do I publish a blog post from Claude Code?**
-Add the server with `claude mcp add --transport http goodsender https://mcp.goodsender.com/` and sign in with `claude mcp login goodsender`. Then ask Claude Code to draft the post, show the preview and publish it. The [MCP connection guide](https://goodsender.com/docs/mcp/) walks through your first publish.
-
-**Can Codex publish posts to my blog on my own domain?**
-Yes. Connect Codex with `codex mcp add goodsender --url https://mcp.goodsender.com/`, then ask it to connect your domain. It returns the DNS records you add at your DNS provider, and published posts appear at that address. Setup steps are in the [MCP connection guide](https://goodsender.com/docs/mcp/).
-
-**Can it send the post as a newsletter at the same time?**
-Yes. Select the newsletter in the post's distribution, and publishing emails it to subscribers who have given consent. The blog needs a sending domain, a `From:` address and a public address first. The email has the subject, the cover image when one is set, a summary and a link to the post, not the full body. See [how publishing from Claude and ChatGPT works](https://blog.goodsender.com/blog-from-claude-and-codex-mcp).
-
-## How it compares
-
-For side-by-side comparisons with other blog and newsletter platforms, see GoodSender vs [WordPress](https://goodsender.com/compare/wordpress), [Ghost](https://goodsender.com/compare/ghost), [beehiiv](https://goodsender.com/compare/beehiiv) and [Hashnode](https://goodsender.com/compare/hashnode).
-
-## Email delivery
-
-GoodSender also sends email beyond blog newsletters. Permission protects deliverability, so cold outreach is not supported.
-
-- 🤝 **Consent handling.** Recipients you add are asked for consent by email. Custom emails wait in the queue until the recipient grants consent, then go out.
-- ✅ **Transactional templates.** Built-in templates (OTP, MFA, order completion and similar) send right away, without a consent step.
-- ✉️ **Formats.** Send plain text, HTML or Markdown to one or more recipients.
-- 📝 **Custom templates.** Create and edit templates with dynamic variables, preview them in the chat and send a test email.
+- 🤝 **Consent handling.** Recipients you add get a consent request by email. Custom emails to a recipient without consent wait in a queue. Emails to recipients who already consented go out right away.
+- 🔁 **Automatic consent flow.** You do not track consent yourself. Queued emails are sent on the next tool call that refreshes consent state, such as `check_sender_domain_stats` or `list_recipients`, after the recipient consents. Nothing is sent while the server is idle.
+- ✅ **Transactional templates.** Built-in templates send right away, without a consent step: OTP code, MFA enrollment, new device login, password changed, email changed, order receipt and order completed.
+- ✉️ **Formats.** Send plain text, HTML or Markdown to one or more addresses, or to whole groups.
+- 📝 **Custom templates.** Create and edit templates with dynamic variables. Preview them in the chat with sample data, send a test email, then save and send by template name.
 - 👥 **Recipient groups.** Organize recipients into groups and address a whole group by name.
-- 🏷️ **Sender identities.** Manage `From:` identities and refer to them by name.
-- 📊 **Health metrics.** Check delivery stats for each sender domain.
-- 🛡️ **Where data lives.** Pending emails, custom templates, recipient groups and sender identities are stored in the MCP server's database: on your machine for a local server, on the server host for the hosted connection. Blog posts, settings and designs are stored on GoodSender servers.
+- 🏷️ **Sender identities.** Manage `From:` identities on a verified domain and refer to them by name.
+- 📊 **Health metrics.** Check email health metrics for each sender domain.
+- 🛡️ **Where data lives.** Pending emails, custom templates, recipient groups and sender identities are stored in the MCP server's database: on your machine for a local server, on the server host for the hosted connection. Sending uses the GoodSender API. Blog posts, settings and designs are stored on GoodSender servers.
 
 <details>
   <summary><b>Example email prompts</b></summary>
@@ -301,12 +197,110 @@ GoodSender also sends email beyond blog newsletters. Permission protects deliver
   > - Create and enqueue a personalized template-based email for each recipient in the AI newsletter subscribers group
   > - For all recipients who haven't received an email with consent request, will request their consent for receiving emails from you
   > - Send emails to all recipients who granted their email consent
-  > - Monitor all recipients with pending consent and send the email as soon as they grant it
+  > - Keep the other emails queued; they go out on a later tool call after the recipient consents
 
 </details>
 
 <img width="392" height="539" alt="Example 1" src="https://github.com/user-attachments/assets/155f6fae-61f0-4e56-b503-174793f109e5" />
 <img width="392" height="539" alt="Example 2" src="https://github.com/user-attachments/assets/8916165a-68cc-4442-a49a-3f08e93da7ab" />
+
+## Tools
+
+### Blog and newsletter
+
+| Tool | What it does |
+|---|---|
+| **Posts and newsletter** | |
+| `list_posts` | List all posts, drafts and published, with the blog's byline and taxonomy. |
+| `get_post` | Get one post, including its markdown body. |
+| `create_post` | Create a draft post. It never publishes or sends. |
+| `edit_post` | Change a draft or published post. |
+| `delete_post` | Permanently delete a post. |
+| `create_post_preview` | Create a signed preview URL for a draft or published post. |
+| `upload_post_image` | Upload an image (JPEG, PNG, GIF or WebP) for a post and get back its URL. |
+| `get_post_distribution` | Show where a post goes when published: the newsletter and the dev.to, X, LinkedIn, Bluesky and Mastodon destinations. |
+| `set_post_distribution` | Choose those destinations and review their text, newsletter subject and summary. |
+| `publish_post` | Publish the post to the public blog, then act on its distribution plan. |
+| `send_post_test` | Send a test email of the post to one inbox. |
+| `broadcast_post` | Email a published post's newsletter to consented subscribers, at most once per post. |
+| `reannounce_post` | Post a published post to one announce destination (X, LinkedIn, Bluesky or Mastodon) again. |
+| **Blog settings and custom domain** | |
+| `get_blog` | Get blog settings (title, description, sender, theme, custom domain) and whether a custom design is live. |
+| `update_blog` | Create or change blog settings, including SEO title and description. |
+| `connect_blog_domain` | Claim a custom hostname for the blog and get the DNS records to add. |
+| `get_blog_custom_domain` | Check custom domain status and DNS targets. |
+| `remove_blog_custom_domain` | Remove the blog's custom domain. |
+| **Blog design** | |
+| `blog_design_template_format` | Documentation for the blog design template format. |
+| `blog_design_list` | List saved designs, flagging the active one and the stock one. |
+| `blog_design_create` | Create a new design from templates and images. |
+| `blog_design_edit` | Edit a design's templates. |
+| `blog_design_get_latest_checkpoint` | Get the latest version of a design. |
+| `blog_design_checkpoint_list` | List the versions of a design. |
+| `blog_design_checkpoint_restore` | Go back to an earlier version, deleting the newer ones. |
+| `blog_design_save` | Keep a version and delete the older ones. |
+| `blog_design_activate` | Make a saved design the live design of the blog. |
+| `blog_design_image_upload_url` | Get an upload URL for a logo or favicon. |
+
+### Email
+
+| Tool | What it does |
+|---|---|
+| **Sending** | |
+| `enqueue_email` | Queue an email in plain text, HTML or Markdown to addresses or groups. It is sent once the recipient consents. |
+| `enqueue_template_email` | Queue a template-based email. It is sent once the recipient consents. |
+| `send_consentless_email` | Send a built-in transactional template (OTP code, MFA enrollment, new device login, password or email changed, order receipt or completion) right away. |
+| `send_template_draft_test_email` | Send a test email from a template draft to one recipient. |
+| **Templates** | |
+| `template_format` | Documentation for the email template format. |
+| `create_template_draft` | Start a new template draft. |
+| `edit_template` | Edit a template or draft with search-and-replace changes. |
+| `get_template` | Get a saved template by name. |
+| `get_template_content` | Get a template's current content, including unsaved edits. |
+| `render_template_preview` | Render a template preview with sample data. |
+| `save_template` | Save a template draft. |
+| `list_templates` | List email templates. |
+| `delete_template` | Delete a template and the emails created from it. |
+| **Recipients and groups** | |
+| `create_recipients` | Add recipients and request their consent. |
+| `list_recipients` | List recipients with group memberships and consent status. |
+| `edit_recipient` | Change a recipient's display name. |
+| `delete_recipients` | Permanently delete recipients and their emails. |
+| `create_group` | Create a recipient group. |
+| `list_groups` | List recipient groups. |
+| `add_group_members` | Add recipients to a group. |
+| `remove_group_members` | Remove recipients from a group. |
+| **Senders** | |
+| `create_sender_identity` | Create a `From:` identity on a verified domain. |
+| `edit_sender_identity` | Change a sender identity's display name. |
+| `list_sender_identities` | List sender identities and whether each domain is verified. |
+| `check_sender_domain_stats` | Show email health metrics for each sender domain. It also sends queued emails whose recipients have consented. |
+
+`confirm_action` runs an action you approved, for both blog and email tools. It is present only while [action confirmation](#action-confirmation) is on.
+
+## FAQ
+
+**Is there a blog platform with an official MCP server?**
+Yes. GoodSender publishes this server for its blog platform. Connect the hosted server at `https://mcp.goodsender.com/` with OAuth, or run it locally. See the [MCP connection guide](https://goodsender.com/docs/mcp/).
+
+**How do I publish a blog post from Claude Code?**
+Add the server with `claude mcp add --transport http goodsender https://mcp.goodsender.com/` and sign in with `claude mcp login goodsender`. Then ask Claude Code to draft the post, show the preview and publish it. The [MCP connection guide](https://goodsender.com/docs/mcp/) walks through your first publish.
+
+**Can Codex publish posts to my blog on my own domain?**
+Yes. Connect Codex with `codex mcp add goodsender --url https://mcp.goodsender.com/`, then ask it to connect your domain. It returns the DNS records you add at your DNS provider, and published posts appear at that address. Setup steps are in the [MCP connection guide](https://goodsender.com/docs/mcp/).
+
+**Can it send the post as a newsletter at the same time?**
+Yes. Select the newsletter in the post's distribution, and publishing emails it to subscribers who have given consent. The blog needs a sending domain, a `From:` address and a public address first. The email has the subject, the cover image when one is set, a summary and a link to the post, not the full body. See [how publishing from Claude and ChatGPT works](https://blog.goodsender.com/blog-from-claude-and-codex-mcp).
+
+**How do I send email from Claude or Claude Code?**
+Connect the server as in [Quick start](#quick-start-hosted-oauth), then ask for the email in plain words, for example "Email the March update to the beta-users group." Recipients who already consented get it right away. Anyone else gets a consent request, and the email goes out after they consent.
+
+**Which emails skip consent (transactional/OTP)?**
+Only the built-in transactional templates: OTP code, MFA enrollment, new device login, password changed, email changed, order receipt and order completed. `send_consentless_email` sends them right away. Custom emails and custom templates always wait for consent.
+
+## How it compares
+
+For side-by-side comparisons with other blog and newsletter platforms, see GoodSender vs [WordPress](https://goodsender.com/compare/wordpress), [Ghost](https://goodsender.com/compare/ghost), [beehiiv](https://goodsender.com/compare/beehiiv) and [Hashnode](https://goodsender.com/compare/hashnode).
 
 ## Telemetry & privacy
 

@@ -15,7 +15,7 @@ Ask your assistant things like:
 - "Send a password reset code to user@example.com with the OTP template."
 - "Email the March update to the beta-users group."
 
-Posts are always created as drafts. Before publishing, the assistant shows where the post will go (your blog, the newsletter, connected social accounts) and asks you to confirm, unless you turned [action confirmation](#action-confirmation) off.
+Posts are always created as drafts. Before publishing, the assistant shows where the post will go (your blog, the newsletter, connected social accounts) and asks you to approve it. See [Action confirmation](#action-confirmation) for how approval works on the hosted and local servers.
 The newsletter email carries the subject, the cover image when one is set, a summary and a link to the published post, not the full post body.
 Transactional templates such as OTP codes send right away. Other emails wait until the recipient consents. See [Email sending](#email-sending).
 
@@ -147,16 +147,17 @@ The local server uses an API key. Create one on the **API keys** page of your Go
 
 ### Action confirmation
 
-By default, tools that publish, send, delete or change the live blog design do not run immediately. They return a confirmation token. The agent must call `confirm_action` after you approve.
+Every tool declares whether it only reads, or changes something. Tools that publish, send, delete or change live state are marked destructive, so clients such as Claude ask you before running them.
 
-Set `GOODSENDER_DISABLE_ACTION_GUARDS=true` in the MCP server environment to skip that step. Tools then run when the client calls them. Use this for unattended loops (scheduled agents, CI). Leave it unset if you want every send and publish to wait for your approval in the chat.
+- **Hosted server** (`mcp.goodsender.com`): that client prompt is the approval step. Tools run when you approve the call, and `confirm_action` is not offered.
+- **Local server:** action guards add a second step by default. A tool that publishes, sends, deletes or changes the live blog design returns a confirmation token instead of acting, and `confirm_action` runs it once you approve. Set `GOODSENDER_DISABLE_ACTION_GUARDS=true` in the server environment to skip that step, for example for unattended loops (scheduled agents, CI).
 
 ## Email sending
 
 GoodSender sends email as well as blog posts. Permission protects deliverability, so cold outreach is not supported. Email tools work with the hosted server and with a local server.
 
 - 🤝 **Consent handling.** Recipients you add get a consent request by email. Custom emails to a recipient without consent wait in a queue. Emails to recipients who already consented go out right away.
-- 🔁 **Automatic consent flow.** You do not track consent yourself. Queued emails are sent on the next tool call that refreshes consent state, such as `check_sender_domain_stats` or `list_recipients`, after the recipient consents. Nothing is sent while the server is idle.
+- 🔁 **Consent flow.** You do not track consent yourself. After a recipient consents, their queued emails go out when you ask to send pending emails (`send_pending_emails`) or use another tool that sends email. Nothing is sent while the server is idle.
 - ✅ **Transactional templates.** Built-in templates send right away, without a consent step: OTP code, MFA enrollment, new device login, password changed, email changed, order receipt and order completed.
 - ✉️ **Formats.** Send plain text, HTML or Markdown to one or more addresses, or to whole groups.
 - 📝 **Custom templates.** Create and edit templates with dynamic variables. Preview them in the chat with sample data, send a test email, then save and send by template name.
@@ -197,7 +198,7 @@ GoodSender sends email as well as blog posts. Permission protects deliverability
   > - Create and enqueue a personalized template-based email for each recipient in the AI newsletter subscribers group
   > - For all recipients who haven't received an email with consent request, will request their consent for receiving emails from you
   > - Send emails to all recipients who granted their email consent
-  > - Keep the other emails queued; they go out on a later tool call after the recipient consents
+  > - Keep the other emails queued; they go out after the recipient consents, when you send pending emails
 
 </details>
 
@@ -250,6 +251,7 @@ GoodSender sends email as well as blog posts. Permission protects deliverability
 | `enqueue_email` | Queue an email in plain text, HTML or Markdown to addresses or groups. It is sent once the recipient consents. |
 | `enqueue_template_email` | Queue a template-based email. It is sent once the recipient consents. |
 | `send_consentless_email` | Send a built-in transactional template (OTP code, MFA enrollment, new device login, password or email changed, order receipt or completion) right away. |
+| `send_pending_emails` | Send queued emails whose recipients have consented since they were queued. |
 | `send_template_draft_test_email` | Send a test email from a template draft to one recipient. |
 | **Templates** | |
 | `template_format` | Documentation for the email template format. |
@@ -263,7 +265,7 @@ GoodSender sends email as well as blog posts. Permission protects deliverability
 | `delete_template` | Delete a template and the emails created from it. |
 | **Recipients and groups** | |
 | `create_recipients` | Add recipients and request their consent. |
-| `list_recipients` | List recipients with group memberships and consent status. |
+| `list_recipients` | List recipients with group memberships and their last known consent status. |
 | `edit_recipient` | Change a recipient's display name. |
 | `delete_recipients` | Permanently delete recipients and their emails. |
 | `create_group` | Create a recipient group. |
@@ -274,9 +276,9 @@ GoodSender sends email as well as blog posts. Permission protects deliverability
 | `create_sender_identity` | Create a `From:` identity on a verified domain. |
 | `edit_sender_identity` | Change a sender identity's display name. |
 | `list_sender_identities` | List sender identities and whether each domain is verified. |
-| `check_sender_domain_stats` | Show email health metrics for each sender domain. It also sends queued emails whose recipients have consented. |
+| `check_sender_domain_stats` | Show email health metrics for each sender domain. Read-only. |
 
-`confirm_action` runs an action you approved, for both blog and email tools. It is present only while [action confirmation](#action-confirmation) is on.
+`confirm_action` runs an action you approved, for both blog and email tools. It is present only on a local server with action guards on (see [Action confirmation](#action-confirmation)).
 
 ## FAQ
 
@@ -293,7 +295,7 @@ Yes. Connect Codex with `codex mcp add goodsender --url https://mcp.goodsender.c
 Yes. Select the newsletter in the post's distribution, and publishing emails it to subscribers who have given consent. The blog needs a sending domain, a `From:` address and a public address first. The email has the subject, the cover image when one is set, a summary and a link to the post, not the full body. See [how publishing from Claude and ChatGPT works](https://blog.goodsender.com/blog-from-claude-and-codex-mcp).
 
 **How do I send email from Claude or Claude Code?**
-Connect the server as in [Quick start](#quick-start-hosted-oauth), then ask for the email in plain words, for example "Email the March update to the beta-users group." Recipients who already consented get it right away. Anyone else gets a consent request, and the email goes out after they consent.
+Connect the server as in [Quick start](#quick-start-hosted-oauth), then ask for the email in plain words, for example "Email the March update to the beta-users group." Recipients who already consented get it right away. Anyone else gets a consent request, and the email goes out after they consent, when you send pending emails.
 
 **Which emails skip consent (transactional/OTP)?**
 Only the built-in transactional templates: OTP code, MFA enrollment, new device login, password changed, email changed, order receipt and order completed. `send_consentless_email` sends them right away. Custom emails and custom templates always wait for consent.

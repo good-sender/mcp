@@ -318,13 +318,15 @@ We do **not** intentionally collect email bodies, recipient addresses, or templa
 
 You can **opt out** of telemetry collection by setting `GOODSENDER_TELEMETRY=false` in the MCP server environment.
 
-See the **[GoodSender Privacy Policy](https://joylabs.com/legal/privacy-policy)** for how personal data is handled by the service.
+See the **[GoodSender Privacy Policy](https://goodsender.com/privacy)** for how personal data is handled by the service, and the [GoodSender Terms of Service](https://goodsender.com/terms) for the terms of use.
 
 ## Links
 
 - [MCP connection guide](https://goodsender.com/docs/mcp/)
 - [Blog from Claude and ChatGPT: a walkthrough](https://blog.goodsender.com/blog-from-claude-and-codex-mcp)
 - [GoodSender](https://goodsender.com)
-- [Privacy policy](https://joylabs.com/legal/privacy-policy)
+- [Privacy policy](https://goodsender.com/privacy)
+- [Terms of service](https://goodsender.com/terms)
+- Support: [support@goodsender.com](mailto:support@goodsender.com)
 - [Telemetry](#telemetry--privacy): on by default, opt out with `GOODSENDER_TELEMETRY=false`
 - [Issues](https://github.com/good-sender/mcp/issues)

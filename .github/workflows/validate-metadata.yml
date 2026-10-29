@@ -1,0 +1,26 @@
+name: Validate metadata
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  schema-validation:
+    name: MCP Registry schema validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.13'
+      - name: Install schema validator
+        run: python -m pip install 'jsonschema[format]==4.23.0'
+      - name: Validate metadata and template rendering
+        run: python -B -m unittest discover -s tests -v

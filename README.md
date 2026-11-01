@@ -151,6 +151,7 @@ Every tool declares whether it only reads, or changes something. Tools that publ
 
 - **Hosted server** (`mcp.goodsender.com`): that client prompt is the approval step. Tools run when you approve the call, and `confirm_action` is not offered.
 - **Local server:** action guards add a second step by default. A tool that publishes, sends, deletes or changes the live blog design returns a confirmation token instead of acting, and `confirm_action` runs it once you approve. Set `GOODSENDER_DISABLE_ACTION_GUARDS=true` in the server environment to skip that step, for example for unattended loops (scheduled agents, CI).
+- **CLI** (the `goodsender-*` binaries in `binaries.zip`): runs with action guards off. A command you type is the approval, so it acts immediately and there is no `confirm_action` step.
 
 ## Email sending
 
@@ -306,25 +307,27 @@ For side-by-side comparisons with other blog and newsletter platforms, see GoodS
 
 ## Telemetry & privacy
 
-Telemetry is enabled by default. MCP server sends aggregate usage and reliability metrics to GoodSender to help improve the product.
+Telemetry is enabled by default, on the hosted server and on a server you run yourself. The MCP server sends usage and reliability metrics to GoodSender's own metrics and tracing systems (no third-party analytics vendor) to help improve the product.
 
 Typical signals include:
-- MCP tool names, call counts, and latency.
+- The workspace identifier, MCP tool names, call counts, and latency.
 - Success and error rates.
-- Short error excerpts on failures.
+- On failures, the error message truncated to 512 characters.
 - Background job error codes and frequency.
 
-We do **not** intentionally collect email bodies, recipient addresses, or template contents as part of this telemetry.
+Tool inputs and results (email bodies, recipient lists, template contents) are not recorded. An error message can still contain a fragment of what was passed to the tool, for example an email address that failed validation.
 
-You can **opt out** of telemetry collection by setting `GOODSENDER_TELEMETRY=false` in the MCP server environment.
+On a server you run yourself (MCP bundle, Docker, binaries or CLI), you can **opt out** of telemetry by setting `GOODSENDER_TELEMETRY=false` in the MCP server environment.
 
-See the **[GoodSender Privacy Policy](https://joylabs.com/legal/privacy-policy)** for how personal data is handled by the service.
+See the **[GoodSender Privacy Policy](https://goodsender.com/privacy)** for how personal data is handled by the service, and the [GoodSender Terms of Service](https://goodsender.com/terms) for the terms of use.
 
 ## Links
 
 - [MCP connection guide](https://goodsender.com/docs/mcp/)
 - [Blog from Claude and ChatGPT: a walkthrough](https://blog.goodsender.com/blog-from-claude-and-codex-mcp)
 - [GoodSender](https://goodsender.com)
-- [Privacy policy](https://joylabs.com/legal/privacy-policy)
+- [Privacy policy](https://goodsender.com/privacy)
+- [Terms of service](https://goodsender.com/terms)
+- Support: [support@goodsender.com](mailto:support@goodsender.com)
 - [Telemetry](#telemetry--privacy): on by default, opt out with `GOODSENDER_TELEMETRY=false`
 - [Issues](https://github.com/good-sender/mcp/issues)

@@ -9,6 +9,18 @@
     "url": "https://github.com/good-sender/mcp",
     "source": "github"
   },
+  "icons": [
+    {
+      "src": "https://goodsender.com/favicon.svg",
+      "mimeType": "image/svg+xml",
+      "sizes": ["any"]
+    },
+    {
+      "src": "https://goodsender.com/logo512.png",
+      "mimeType": "image/png",
+      "sizes": ["512x512"]
+    }
+  ],
   "remotes": [
     {
       "type": "streamable-http",

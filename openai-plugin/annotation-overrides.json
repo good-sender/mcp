@@ -48,7 +48,7 @@
       "openWorldHint": {"when": true, "text": "Posts publicly on a third-party social network."}
     },
     "send_consentless_email": {
-      "destructiveHint": {"when": true, "text": "Sends a built-in transactional email (one-time code, receipt) immediately; it cannot be recalled."}
+      "destructiveHint": {"when": true, "text": "Sends a built-in transactional email (account notice or receipt) immediately; it cannot be recalled."}
     },
     "set_post_distribution": {
       "destructiveHint": {"when": true, "text": "Overwrites the post's destination selection and reviewed per-destination copy; nothing is sent."}

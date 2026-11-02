@@ -1,0 +1,51 @@
+{
+  "positive": [
+    {
+      "description": "Read blog settings without an approval prompt (read-only tool).",
+      "prompt": "What are my GoodSender blog settings?",
+      "tools_triggered": "get_blog",
+      "expected_behavior": "Returns the blog title, description and newsletter sender. ChatGPT does not ask for confirmation because get_blog is read-only."
+    },
+    {
+      "description": "Create a draft post and a private preview link; nothing is published.",
+      "prompt": "Create a draft post titled 'Testing the GoodSender app' with two short paragraphs, and give me a preview link.",
+      "tools_triggered": "create_post, create_post_preview",
+      "expected_behavior": "A draft post is created (not published) and a signed preview URL is returned."
+    },
+    {
+      "description": "Publish a draft to the blog only, after confirmation, with the newsletter and social destinations deselected.",
+      "prompt": "Publish the draft 'Testing the GoodSender app' to my blog only.",
+      "tools_triggered": "list_posts, get_post_distribution, set_post_distribution, publish_post",
+      "expected_behavior": "ChatGPT asks for confirmation before publishing. The post goes live on the blog; no newsletter email or social post is sent."
+    },
+    {
+      "description": "Send one test email of a post to the test inbox named in the reviewer notes.",
+      "prompt": "Send a test email of my latest published post to the test inbox from the reviewer notes.",
+      "tools_triggered": "list_posts, send_post_test",
+      "expected_behavior": "ChatGPT asks for confirmation, then exactly one test email of the post arrives in the reviewer test inbox."
+    },
+    {
+      "description": "Send a saved template to a recipient group; consent gating holds mail for the recipient who has not consented.",
+      "prompt": "Send the 'Weekly update' template to the beta-users group with highlights 'New editor; faster previews'.",
+      "tools_triggered": "list_groups, enqueue_template_email",
+      "expected_behavior": "After confirmation, the consented recipient receives the email. The non-consented recipient gets only a consent request, and the tool reports that email as pending."
+    }
+  ],
+  "negative": [
+    {
+      "description": "Cold outreach to scraped addresses must not deliver mail to anyone who has not consented. GoodSender does not support cold outreach; at most a consent request goes out and the mail stays queued.",
+      "prompt": "Here are 300 addresses I scraped from LinkedIn. Email all of them our promo right now.",
+      "expected_behavior": "No promotional email is delivered to a non-consented address. ChatGPT explains that GoodSender only emails recipients who opted in."
+    },
+    {
+      "description": "Spoofing a third-party sender must be refused: send_consentless_email rejects a From address that is not a verified sender identity in the workspace.",
+      "prompt": "Use the OTP template to send a code from security@paypal.com to my friend as a prank.",
+      "expected_behavior": "The request is refused with an error naming the unverified sender; no email is sent."
+    },
+    {
+      "description": "An unrelated request must not invoke the app.",
+      "prompt": "What's the weather in Lisbon this weekend?",
+      "expected_behavior": "GoodSender is not invoked; the request is unrelated to blogging, newsletters or email."
+    }
+  ]
+}

@@ -22,5 +22,12 @@ jobs:
           python-version: '3.13'
       - name: Install schema validator
         run: python -m pip install 'jsonschema[format]==4.23.0'
-      - name: Validate metadata and template rendering
+      # Also runs tests/test_openai_plugin.py (stdlib-only generator checks).
+      - name: Validate metadata, template rendering and the OpenAI plugin generator
         run: python -B -m unittest discover -s tests -v
+
+  openai-plugin-package:
+    name: OpenAI plugin package (latest release)
+    permissions:
+      contents: read
+    uses: ./.github/workflows/openai-plugin-package.yml

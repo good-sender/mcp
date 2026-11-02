@@ -1,0 +1,1 @@
+GoodSender __VERSION__ for ChatGPT: publish blog posts, email them as newsletters, and send consent-based and transactional email from the conversation. Every tool declares explicit read-only, destructive and open-world hints, so ChatGPT asks before publishing, sending or deleting.

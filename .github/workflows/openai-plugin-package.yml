@@ -1,0 +1,131 @@
+# Builds the OpenAI Plugin Directory package (the ZIP uploaded at
+# platform.openai.com/plugins) from openai-plugin/ and a published release.
+#
+# The released Linux server binary is run in local stdio mode against a
+# loopback mock of the one API call it makes at startup (the session check),
+# so its real tools/list can be read without contacting the GoodSender API or
+# using any secret. The annotation justifications are generated from that
+# listing, and the test cases' tool names are checked against it.
+#
+# Callers:
+#   - publish-release.yml (prod stage): builds for the published tag; a
+#     separate job there attaches the ZIP to the release.
+#   - validate-metadata.yml (pull requests, main): builds against the latest
+#     release to prove the package still validates.
+#   - workflow_dispatch: build on demand; download the workflow artifact.
+#
+# Optional repository variable OPENAI_PLUGIN_DEMO_URL: the reviewer-accessible
+# demo recording URL, stamped into review.demo_recording_url when set.
+
+name: OpenAI plugin package
+
+on:
+  workflow_call:
+    inputs:
+      ref:
+        description: "Published release tag to build from (e.g. v1.2.3). Empty: the latest release."
+        type: string
+        required: false
+        default: ""
+    outputs:
+      version:
+        description: "Package version (release tag without the leading v)."
+        value: ${{ jobs.build.outputs.version }}
+      artifact:
+        description: "Name of the workflow artifact holding the package."
+        value: ${{ jobs.build.outputs.artifact }}
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Published release tag to build from (e.g. v1.2.3). Empty: the latest release."
+        type: string
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build OpenAI plugin package
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    outputs:
+      version: ${{ steps.release.outputs.version }}
+      artifact: ${{ steps.release.outputs.artifact }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
+
+      - name: Resolve release
+        id: release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          INPUT_REF: ${{ inputs.ref }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          ref="$INPUT_REF"
+          if [[ -z "$ref" ]]; then
+            ref="$(gh api "repos/${REPO}/releases/latest" --jq .tag_name)"
+          fi
+          if [[ ! "$ref" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([-+][0-9A-Za-z.+-]+)?$ ]]; then
+            echo "!! ref must be a v* release tag (got: '$ref')" >&2
+            exit 1
+          fi
+          version="${ref#v}"
+          {
+            echo "ref=$ref"
+            echo "version=$version"
+            echo "artifact=goodsender-openai-plugin-${version}"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Download the released server
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REF: ${{ steps.release.outputs.ref }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          mkdir -p bin
+          gh release download "$REF" --repo "$REPO" --pattern binaries.zip --dir bin
+          unzip -q bin/binaries.zip goodsender-mcp-linux-amd64 -d bin
+          chmod +x bin/goodsender-mcp-linux-amd64
+
+      - name: List the released server's tools
+        run: python3 -B scripts/openai-plugin/list_tools.py bin/goodsender-mcp-linux-amd64 bin/tools.json
+
+      - name: Validate and build the package
+        env:
+          VERSION: ${{ steps.release.outputs.version }}
+          OPENAI_PLUGIN_DEMO_URL: ${{ vars.OPENAI_PLUGIN_DEMO_URL }}
+        run: |
+          set -euo pipefail
+          python3 -B scripts/openai-plugin/build.py \
+            --version "$VERSION" \
+            --tools bin/tools.json \
+            --out-dir dist/openai-plugin
+          unzip -l "dist/openai-plugin/goodsender-openai-plugin-${VERSION}.zip"
+
+      - name: Summary
+        env:
+          REF: ${{ steps.release.outputs.ref }}
+          VERSION: ${{ steps.release.outputs.version }}
+        run: |
+          {
+            echo "## OpenAI plugin package ${VERSION}"
+            echo
+            echo "Built from release \`${REF}\`. Download the \`goodsender-openai-plugin-${VERSION}\` artifact."
+            echo
+            cat dist/openai-plugin/ANNOTATIONS.md
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ${{ steps.release.outputs.artifact }}
+          path: dist/openai-plugin/
+          if-no-files-found: error
+          retention-days: 30

@@ -1,0 +1,60 @@
+{
+  "_comment": "Optional per-tool wording for an annotation justification. Each entry names the hint value it was written for (\"when\"); the generator fails if the released server reports a different value or the tool no longer exists, so wording cannot drift from the real hints. Tools and hints not listed here use the generic wording in scripts/openai-plugin/build.py.",
+  "tools": {
+    "blog_design_activate": {
+      "destructiveHint": {"when": true, "text": "Replaces the design the live blog shows; readers see the change at once."},
+      "openWorldHint": {"when": true, "text": "The change is visible on the public blog."}
+    },
+    "blog_design_checkpoint_restore": {
+      "destructiveHint": {"when": true, "text": "Deletes every checkpoint newer than the target and, for the active design, changes the live blog."}
+    },
+    "blog_design_save": {
+      "destructiveHint": {"when": true, "text": "Deletes older checkpoints irreversibly and, for the active design, publishes the saved version to the live blog."}
+    },
+    "broadcast_post": {
+      "destructiveHint": {"when": true, "text": "Emails the newsletter to the consented list; a sent email cannot be recalled."},
+      "openWorldHint": {"when": true, "text": "Delivers email to external inboxes."}
+    },
+    "connect_blog_domain": {
+      "openWorldHint": {"when": true, "text": "Claims a public hostname for the blog; DNS-facing and visible on the internet."}
+    },
+    "create_recipients": {
+      "destructiveHint": {"when": true, "text": "Sends each new recipient a consent-request email, which cannot be recalled."},
+      "openWorldHint": {"when": true, "text": "The consent request reaches external inboxes."}
+    },
+    "delete_post": {
+      "destructiveHint": {"when": true, "text": "Permanently deletes the post and, if it was published, its public page."}
+    },
+    "delete_recipients": {
+      "destructiveHint": {"when": true, "text": "Permanently deletes recipients, their group memberships and their queued and historical emails."}
+    },
+    "delete_template": {
+      "destructiveHint": {"when": true, "text": "Permanently deletes a saved template and the emails created from it."}
+    },
+    "edit_post": {
+      "destructiveHint": {"when": true, "text": "Overwrites post fields (Markdown and tags are replaced wholesale); on a published post the public page changes."}
+    },
+    "enqueue_email": {
+      "destructiveHint": {"when": true, "text": "Sends at once to consented recipients and sends consent requests to the rest; sends cannot be recalled."}
+    },
+    "enqueue_template_email": {
+      "destructiveHint": {"when": true, "text": "Sends a saved template at once to consented recipients and consent requests to the rest; sends cannot be recalled."}
+    },
+    "publish_post": {
+      "destructiveHint": {"when": true, "text": "Makes the post public and delivers it to the selected destinations (newsletter email, dev.to, X, LinkedIn, Bluesky, Mastodon); deliveries cannot be undone."},
+      "openWorldHint": {"when": true, "text": "Publishes to the public blog and to external email and social destinations."}
+    },
+    "reannounce_post": {
+      "openWorldHint": {"when": true, "text": "Posts publicly on a third-party social network."}
+    },
+    "send_consentless_email": {
+      "destructiveHint": {"when": true, "text": "Sends a built-in transactional email (one-time code, receipt) immediately; it cannot be recalled."}
+    },
+    "set_post_distribution": {
+      "destructiveHint": {"when": true, "text": "Overwrites the post's destination selection and reviewed per-destination copy; nothing is sent."}
+    },
+    "upload_post_image": {
+      "openWorldHint": {"when": true, "text": "Stores the image at a public HTTPS URL."}
+    }
+  }
+}

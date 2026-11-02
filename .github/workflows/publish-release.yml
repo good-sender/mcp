@@ -6,7 +6,8 @@
 #           draft here has its assets). Version tags only (no :latest), no
 #           Registry; commits the image pin to hosted-mcp-deployment `main`.
 #   - prod: release published (or workflow_dispatch). Adds :latest, publishes to
-#           the Registry; merges the dev pin commit into `production`.
+#           the Registry; merges the dev pin commit into `production`; builds
+#           the OpenAI plugin package and attaches it to the release.
 #
 # Auth uses GitHub Actions OIDC, so no tokens/secrets are needed to claim the
 # io.github.good-sender/* namespace (the workflow runs inside good-sender/mcp).
@@ -295,3 +296,44 @@ jobs:
         run: |
           mcp-publisher login github-oidc
           mcp-publisher publish
+
+  # Prod stage only: build the OpenAI Plugin Directory package for this release
+  # and attach it as a release asset (openai-plugin/, see README).
+  openai-plugin-package:
+    needs: publish-container
+    if: needs.publish-container.outputs.stage == 'prod'
+    permissions:
+      contents: read
+    uses: ./.github/workflows/openai-plugin-package.yml
+    with:
+      ref: ${{ needs.publish-container.outputs.ref }}
+
+  attach-openai-plugin:
+    needs: [publish-container, openai-plugin-package]
+    if: needs.publish-container.outputs.stage == 'prod'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write    # upload release assets
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: ${{ needs.openai-plugin-package.outputs.artifact }}
+          path: dist
+
+      - name: Attach package to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REF: ${{ needs.publish-container.outputs.ref }}
+          VERSION: ${{ needs.openai-plugin-package.outputs.version }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          prefix="goodsender-openai-plugin-${VERSION}"
+          cp dist/ANNOTATIONS.md "dist/${prefix}-ANNOTATIONS.md"
+          cp dist/TEST_CASES.md "dist/${prefix}-TEST_CASES.md"
+          gh release upload "$REF" --repo "$REPO" --clobber \
+            "dist/${prefix}.zip" \
+            "dist/${prefix}-ANNOTATIONS.md" \
+            "dist/${prefix}-TEST_CASES.md"
+          echo "## OpenAI plugin package attached: \`${prefix}.zip\`" >> "$GITHUB_STEP_SUMMARY"

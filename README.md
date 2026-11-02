@@ -329,6 +329,16 @@ On a server you run yourself (MCP bundle, Docker, binaries or CLI), you can **op
 
 See the **[GoodSender Privacy Policy](https://goodsender.com/privacy)** for how personal data is handled by the service, and the [GoodSender Terms of Service](https://goodsender.com/terms) for the terms of use.
 
+## OpenAI Plugin Directory package
+
+The ZIP uploaded at [platform.openai.com/plugins](https://platform.openai.com/plugins) is generated in GitHub Actions, never by hand. Its sources live in [`openai-plugin/`](openai-plugin/): the manifest template (`plugin.template.json`, version stamped per release), `mcp.json` (the hosted server `https://mcp.goodsender.com/`, OAuth with dynamic client registration), the icons, a get-started skill, the review test cases (`test-cases.json`, exactly 5 positive and 3 negative), the release notes and optional wording for annotation justifications.
+
+[`scripts/openai-plugin/build.py`](scripts/openai-plugin/build.py) validates every submission limit (text lengths, HTTPS URLs, square icons of 48–4096 px and at most 5 MiB, starter prompts, test-case counts) and builds the ZIP. The per-tool annotation justifications (`ANNOTATIONS.md`) are generated from the `tools/list` of the released server binary, which [`list_tools.py`](scripts/openai-plugin/list_tools.py) runs against a local mock of its startup session check, so the justifications always match the real hints.
+
+- **Download:** every published release carries `goodsender-openai-plugin-<version>.zip`, plus `-ANNOTATIONS.md` and `-TEST_CASES.md`, as release assets. To build one without a release, run the **OpenAI plugin package** workflow (Actions → Run workflow, optionally with a release tag) and download its artifact. Pull requests build it against the latest release.
+- **Demo video:** set the repository variable `OPENAI_PLUGIN_DEMO_URL` to stamp the reviewer demo URL into the package. Reviewer credentials are never in the package; enter them in the portal.
+- **Domain verification:** the portal shows a token for `https://mcp.goodsender.com/.well-known/openai-apps-challenge`. Put it in `GOODSENDER_OPENAI_APPS_CHALLENGE` in [good-sender/hosted-mcp-deployment](https://github.com/good-sender/hosted-mcp-deployment) `ansible/envs/prod.yml`, deploy, then press **Verify domain**. The hosted server serves it as plain text. If the portal names the parent origin `https://goodsender.com` instead, the token must be served as a static plain-text file at `/.well-known/openai-apps-challenge` by goodsender-web.
+
 ## Links
 
 - [MCP connection guide](https://goodsender.com/docs/mcp/)

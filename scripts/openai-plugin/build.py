@@ -253,6 +253,9 @@ def check_icon(problems, source, where, rel_path, *, required):
         problems.add(where, f"references a missing file {rel_path}")
         return None
     data = path.read_bytes()
+    # Issue #6 requires PNG assets even though the directory accepts other formats.
+    if path.suffix.lower() != ".png":
+        problems.add(where, "must use a PNG for the GoodSender package")
     if len(data) > MAX_IMAGE_BYTES:
         problems.add(where, f"{rel_path} is {len(data)} bytes; the limit is 5 MiB")
     try:
@@ -412,8 +415,8 @@ def check_manifest(problems, manifest, source):
     if ui.get("screenshots"):
         problems.add(where + "screenshots", "are allowed only for MCP servers with custom UI; remove them")
     assets = []
-    for key, required in (("logo", True), ("composerIcon", True), ("logoDark", False), ("composerIconDark", False)):
-        relative = check_icon(problems, source, where + key, ui.get(key), required=required)
+    for key in ("logo", "composerIcon", "logoDark", "composerIconDark"):
+        relative = check_icon(problems, source, where + key, ui.get(key), required=True)
         if relative:
             assets.append(relative)
 
@@ -435,7 +438,7 @@ def check_manifest(problems, manifest, source):
 def check_test_cases(problems, cases):
     for kind, count, required in (
         ("positive", POSITIVE_CASES, ("description", "prompt", "tools_triggered", "expected_behavior")),
-        ("negative", NEGATIVE_CASES, ("description", "prompt")),
+        ("negative", NEGATIVE_CASES, ("description", "prompt", "tools_triggered", "expected_behavior")),
     ):
         items = cases.get(kind)
         where = f"review.test_cases.{kind}"
@@ -579,13 +582,16 @@ def render_annotations_md(rows, server, version):
 
 
 def check_tools_triggered(problems, cases, tool_names):
-    for i, case in enumerate(cases.get("positive") or []):
-        if not isinstance(case, dict) or not isinstance(case.get("tools_triggered"), str):
-            continue
-        for tool in (t.strip() for t in case["tools_triggered"].split(",")):
-            if tool and tool not in tool_names:
-                problems.add(f"review.test_cases.positive[{i}].tools_triggered",
-                             f"names {tool!r}, which the released server does not list")
+    for kind in ("positive", "negative"):
+        for i, case in enumerate(cases.get(kind) or []):
+            if not isinstance(case, dict) or not isinstance(case.get("tools_triggered"), str):
+                continue
+            if kind == "negative" and case["tools_triggered"].strip() == "none":
+                continue
+            for tool in (t.strip() for t in case["tools_triggered"].split(",")):
+                if tool and tool not in tool_names:
+                    problems.add(f"review.test_cases.{kind}[{i}].tools_triggered",
+                                 f"names {tool!r}, which the released server does not list")
 
 
 def render_test_cases_md(cases, version):
@@ -595,9 +601,9 @@ def render_test_cases_md(cases, version):
              "## Positive", "", "| # | Prompt | Tools triggered | Expected behavior |", "|---|---|---|---|"]
     for i, case in enumerate(cases["positive"], 1):
         lines.append(f"| P{i} | {case['prompt']} | `{case['tools_triggered']}` | {case['expected_behavior']} |")
-    lines += ["", "## Negative", "", "| # | Prompt | Why the app must not act | Expected behavior |", "|---|---|---|---|"]
+    lines += ["", "## Negative", "", "| # | Prompt | Tools triggered | Why the app must not act | Expected behavior |", "|---|---|---|---|---|"]
     for i, case in enumerate(cases["negative"], 1):
-        lines.append(f"| N{i} | {case['prompt']} | {case['description']} | {case.get('expected_behavior', '')} |")
+        lines.append(f"| N{i} | {case['prompt']} | `{case['tools_triggered']}` | {case['description']} | {case['expected_behavior']} |")
     return "\n".join(line.replace("\n", " ") for line in lines) + "\n"
 
 

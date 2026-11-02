@@ -78,7 +78,8 @@ class ValidPackageTests(PackageTestCase):
         archive = self.out / "goodsender-openai-plugin-1.2.3.zip"
         with zipfile.ZipFile(archive) as z:
             self.assertEqual(sorted(z.namelist()), [
-                "assets/composer-icon.svg", "assets/logo.png", "mcp.json",
+                "assets/composer-icon-dark.png", "assets/composer-icon.png",
+                "assets/logo-dark.png", "assets/logo.png", "mcp.json",
                 "plugin.json", "skills/get-started/SKILL.md",
             ])
             manifest = json.loads(z.read("plugin.json"))
@@ -89,6 +90,40 @@ class ValidPackageTests(PackageTestCase):
         self.assertEqual(len(openai["review"]["test_cases"]["negative"]), 3)
         self.assertIn("1.2.3", openai["publication"]["release_notes"])
         self.assertNotIn("demo_recording_url", openai["review"])
+
+    def test_packaged_icons_include_square_pngs_for_both_themes(self):
+        code, stderr = self.run_build()
+        self.assertEqual(code, 0, stderr)
+        with zipfile.ZipFile(self.out / "goodsender-openai-plugin-1.2.3.zip") as archive:
+            ui = json.loads(archive.read("plugin.json"))["extensions"]["com.openai"]["interface"]
+            for key in ("logo", "composerIcon", "logoDark", "composerIconDark"):
+                with self.subTest(icon=key):
+                    path = ui[key]
+                    self.assertTrue(path.endswith(".png"))
+                    data = archive.read(path.removeprefix("./"))
+                    self.assertEqual(data[:8], b"\x89PNG\r\n\x1a\n")
+                    width, height = struct.unpack(">II", data[16:24])
+                    self.assertEqual(width, height)
+                    self.assertGreaterEqual(width, 48)
+                    self.assertLessEqual(width, 4096)
+                    self.assertLessEqual(len(data), 5 * 1024 * 1024)
+
+    def test_generated_table_records_tools_and_outcomes_for_every_case(self):
+        code, stderr = self.run_build()
+        self.assertEqual(code, 0, stderr)
+        cases = json.loads((self.out / "plugin.json").read_text())["extensions"]["com.openai"]["review"]["test_cases"]
+        md = (self.out / "TEST_CASES.md").read_text()
+        self.assertIn("| # | Prompt | Tools triggered | Expected behavior |", md)
+        self.assertIn("| # | Prompt | Tools triggered | Why the app must not act | Expected behavior |", md)
+        for kind, prefix in (("positive", "P"), ("negative", "N")):
+            rows = [line.split(" | ") for line in md.splitlines() if line.startswith(f"| {prefix}")]
+            self.assertEqual(len(rows), len(cases[kind]))
+            for row, case in zip(rows, cases[kind]):
+                self.assertEqual(row[1], case["prompt"])
+                self.assertEqual(row[2], f"`{case['tools_triggered']}`")
+                self.assertEqual(row[-1], case["expected_behavior"] + " |")
+        self.assertEqual([case["tools_triggered"] for case in cases["negative"]],
+                         ["none", "send_consentless_email", "none"])
 
     def test_zip_is_deterministic(self):
         self.assertEqual(self.run_build()[0], 0)
@@ -204,13 +239,27 @@ class RejectedPackageTests(PackageTestCase):
         self.assertRejected("the limit is 5 MiB")
 
     def test_png_content_with_svg_extension(self):
+        self.edit_interface(lambda ui: ui.update(composerIcon="./assets/composer-icon.svg"))
         (self.source / "assets" / "composer-icon.svg").write_bytes(png(64, 64))
         self.assertRejected("SVG is not valid UTF-8 XML")
 
     def test_non_square_svg(self):
+        self.edit_interface(lambda ui: ui.update(composerIcon="./assets/composer-icon.svg"))
         (self.source / "assets" / "composer-icon.svg").write_text(
             '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 50"/>')
         self.assertRejected("SVG dimensions must be square")
+
+    def test_every_icon_requires_png(self):
+        for key in ("logo", "composerIcon", "logoDark", "composerIconDark"):
+            with self.subTest(icon=key):
+                self.edit_interface(lambda ui: ui.update({key: "./assets/composer-icon.svg"}))
+                self.assertRejected(f"interface.{key}: must use a PNG")
+
+    def test_both_dark_icons_are_required(self):
+        for key in ("logoDark", "composerIconDark"):
+            with self.subTest(icon=key):
+                self.edit_interface(lambda ui: ui.pop(key))
+                self.assertRejected(f"interface.{key}: is required")
 
     def test_four_positive_cases(self):
         self.edit_json(self.source / "test-cases.json", lambda c: c["positive"].pop())
@@ -224,6 +273,26 @@ class RejectedPackageTests(PackageTestCase):
     def test_positive_case_without_expected_behavior(self):
         self.edit_json(self.source / "test-cases.json", lambda c: c["positive"][0].pop("expected_behavior"))
         self.assertRejected("review.test_cases.positive[0].expected_behavior: is required")
+
+    def test_negative_case_requires_tool_expectation_and_outcome(self):
+        for key in ("tools_triggered", "expected_behavior"):
+            with self.subTest(field=key):
+                self.edit_json(self.source / "test-cases.json", lambda c: c["negative"][0].pop(key))
+                self.assertRejected(f"review.test_cases.negative[0].{key}: is required")
+
+    def test_negative_case_with_empty_tool_expectation(self):
+        self.edit_json(self.source / "test-cases.json", lambda c: c["negative"][0].update(tools_triggered=""))
+        self.assertRejected("review.test_cases.negative[0].tools_triggered: must not be empty")
+
+    def test_negative_case_names_a_tool_the_server_lacks(self):
+        self.edit_json(self.source / "test-cases.json",
+                       lambda c: c["negative"][1].update(tools_triggered="send_consentless_email, no_such_tool"))
+        self.assertRejected("review.test_cases.negative[1].tools_triggered: names 'no_such_tool'")
+
+    def test_none_cannot_be_combined_with_a_tool(self):
+        self.edit_json(self.source / "test-cases.json",
+                       lambda c: c["negative"][1].update(tools_triggered="none, send_consentless_email"))
+        self.assertRejected("names 'none', which the released server does not list")
 
     def test_unknown_test_case_field(self):
         self.edit_json(self.source / "test-cases.json", lambda c: c["negative"][0].update(test_credentials="x"))

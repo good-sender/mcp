@@ -1,0 +1,11 @@
+{
+  "name": "goodsender",
+  "version": "0.9.1",
+  "description": "Publish blog posts, send newsletters and emails from Gemini CLI, Claude, Codex and ChatGPT.",
+  "mcpServers": {
+    "goodsender": {
+      "httpUrl": "https://mcp.goodsender.com/"
+    }
+  },
+  "contextFileName": "GEMINI.md"
+}

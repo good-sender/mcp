@@ -229,6 +229,39 @@ jobs:
           fi
           echo "## Hosted MCP ${STAGE}: \`${image}\`" >> "$GITHUB_STEP_SUMMARY"
 
+  # Keeps gemini-extension.json's version equal to the published release so the
+  # Gemini CLI extensions gallery (and `gemini extensions list`) show the right
+  # version. Prod only; the dev stage never touches main. Commits with the job's
+  # GITHUB_TOKEN (main is unprotected); a GITHUB_TOKEN push starts no workflow.
+  sync-gemini-extension:
+    needs: publish-container
+    if: needs.publish-container.outputs.stage == 'prod'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Stamp, validate, commit
+        env:
+          REF: ${{ needs.publish-container.outputs.ref }}
+          VERSION: ${{ needs.publish-container.outputs.version }}
+        run: |
+          set -euo pipefail
+          chmod +x scripts/check-gemini-extension.sh
+          ./scripts/check-gemini-extension.sh --write gemini-extension.json "$REF"
+          if git diff --quiet -- gemini-extension.json; then
+            echo "gemini-extension.json already at ${VERSION}"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "gemini-extension.json: version ${VERSION}" -- gemini-extension.json
+          git push origin HEAD:main || { git pull --rebase origin main && git push origin HEAD:main; }
+          echo "## gemini-extension.json: version ${VERSION} committed to main" >> "$GITHUB_STEP_SUMMARY"
+
   publish-mcp-registry:
     needs: publish-container
     if: needs.publish-container.outputs.stage == 'prod'

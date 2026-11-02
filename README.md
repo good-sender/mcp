@@ -59,6 +59,14 @@ Turn on developer mode under **Settings → Apps & Connectors → Advanced setti
 
 Publishing needs MCP apps with write actions. OpenAI offers these as a beta on Business, Enterprise and Edu workspaces, and an admin may have to allow developer mode. Other plans may connect read-only. Menu names change between ChatGPT releases.
 
+### Gemini CLI
+
+```sh
+gemini extensions install https://github.com/good-sender/mcp
+```
+
+The extension adds the hosted server. The browser sign-in (OAuth) opens the first time a tool runs; run `/mcp auth goodsender` in a session to sign in again. Gemini CLI is available to organisations on Gemini Code Assist Standard or Enterprise and through paid Gemini API keys. Individual Google AI accounts moved to Antigravity CLI on 2026-06-18; that CLI is not covered here.
+
 Full guide: [goodsender.com/docs/mcp](https://goodsender.com/docs/mcp/).
 
 ## Local install

@@ -43,7 +43,7 @@ if ! jq -e . "$manifest" >/dev/null 2>&1; then
 fi
 
 want="${tag#v}"
-if [[ "$write" -eq 1 && "$(jq -r '.version // empty' "$manifest")" != "$want" ]]; then
+if [[ "$write" -eq 1 ]] && ! jq -e --arg v "$want" '.version == $v' "$manifest" >/dev/null; then
   tmp="$(mktemp "${manifest}.XXXXXX")"
   jq --indent 2 --arg v "$want" '.version = $v' "$manifest" >"$tmp"
   mv "$tmp" "$manifest"
@@ -53,19 +53,20 @@ errors=()
 fail() { errors+=("$1"); }
 q() { jq -r "$1" "$manifest"; }
 
-semver='^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$'
+# Absolute anchors also reject a final newline in the original JSON string.
+semver='\A[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?\z'
 allowed='["name","version","description","mcpServers","contextFileName","excludeTools","settings","migratedTo","plan","themes"]'
 
 name="$(q 'if (.name|type) == "string" then .name else "" end')"
-[[ "$name" =~ ^[a-z0-9-]+$ ]] \
-  || fail "name: must be a string of lowercase letters, digits and dashes (got '$(q '.name')')"
+jq -e '.name | if type == "string" then test("\\A[a-z0-9-]+\\z") else false end' "$manifest" >/dev/null \
+  || fail "name: must be a string of lowercase letters, digits and dashes (got $(jq -c '.name' "$manifest"))"
 
 version="$(q 'if (.version|type) == "string" then .version else "" end')"
-[[ "$version" =~ $semver ]] \
-  || fail "version: must be MAJOR.MINOR.PATCH[-prerelease][+build] (got '$(q '.version')')"
+jq -e --arg pattern "$semver" '.version | if type == "string" then test($pattern) else false end' "$manifest" >/dev/null \
+  || fail "version: must be MAJOR.MINOR.PATCH[-prerelease][+build] (got $(jq -c '.version' "$manifest"))"
 
-if [[ -n "$tag" && "$version" != "$want" ]]; then
-  fail "version-tag: manifest version ${version:-<none>} does not match release tag ${tag} (${want})"
+if [[ -n "$tag" ]] && ! jq -e --arg v "$want" '.version == $v' "$manifest" >/dev/null; then
+  fail "version-tag: manifest version $(jq -c '.version' "$manifest") does not match release tag ${tag} (${want})"
 fi
 
 [[ "$(q '(.description|type) == "string" and (.description|length) > 0')" == "true" ]] \
@@ -77,8 +78,9 @@ else
   while IFS= read -r key; do
     fail "mcpServers.${key}.https: httpUrl/url must start with https://"
   done < <(q '.mcpServers | to_entries[]
-    | select([.value.httpUrl?, .value.url?] | map(select(. != null))
-             | any(type != "string" or (startswith("https://") | not)))
+    | select([.value | objects | to_entries[]
+              | select(.key == "httpUrl" or .key == "url") | .value]
+             | any(if type == "string" then startswith("https://") | not else true end))
     | .key')
   while IFS= read -r key; do
     fail "mcpServers.${key}.trust: 'trust' is not supported in extensions"

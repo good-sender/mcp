@@ -78,10 +78,30 @@ fi
 expect "name with uppercase" 1 "name:" -- "$(fixture upper '.name = "GoodSender"')"
 expect "name with underscore" 1 "name:" -- "$(fixture under '.name = "good_sender"')"
 expect "name with space" 1 "name:" -- "$(fixture space '.name = "good sender"')"
+for suffix in '\n' '\n\n' '\r\n'; do
+  expect "name with trailing $suffix" 1 "name:" -- "$(fixture name-newline ".name = \"goodsender$suffix\"")"
+  expect "version with trailing $suffix" 1 "version:" -- "$(fixture version-newline ".version = \"0.9.1$suffix\"")"
+done
+expect "name with embedded newline" 1 "name:" -- "$(fixture name-embedded '.name = "good\nsender"')"
+expect "version with embedded newline" 1 "version:" -- "$(fixture version-embedded '.version = "0.9.\n1"')"
+expect "non-string name" 1 "name:" -- "$(fixture name-number '.name = 123')"
+expect "non-string version" 1 "version:" -- "$(fixture version-number '.version = 123')"
+expect "version newline does not match tag" 1 "version-tag:" -- "$(fixture version-tag-newline '.version = "0.9.1\n"')" v0.9.1
+if [[ "$(printf '%s\n' "$err" | wc -l)" -eq 2 ]]; then
+  pass "newline version reports version and tag failures on two lines"
+else
+  fail "newline version diagnostics ($err)"
+fi
 expect "version not semver" 1 "version:" -- "$(fixture semver '.version = "0.9"')"
 expect "prerelease version ok" 0 - -- "$(fixture pre '.version = "1.0.0-rc1+build.5"')"
 expect "httpUrl not https" 1 "mcpServers.goodsender.https" -- "$(fixture http '.mcpServers.goodsender.httpUrl = "http://mcp.goodsender.com/"')"
 expect "url not https" 1 "mcpServers.goodsender.https" -- "$(fixture sse '.mcpServers.goodsender = {url: "http://x.example/sse"}')"
+for key in httpUrl url; do
+  expect "$key explicitly null" 1 "mcpServers.goodsender.https" -- "$(fixture "$key-null" ".mcpServers.goodsender.$key = null")"
+  expect "$key non-string" 1 "mcpServers.goodsender.https" -- "$(fixture "$key-number" ".mcpServers.goodsender.$key = 123")"
+done
+expect "https url without httpUrl" 0 - -- "$(fixture https-sse '.mcpServers.goodsender = {url: "https://x.example/sse"}')"
+expect "absent URL fields allowed" 0 - -- "$(fixture local '.mcpServers.goodsender = {command: "example"}')"
 expect "trust key in server" 1 "mcpServers.goodsender.trust" -- "$(fixture trust '.mcpServers.goodsender.trust = true')"
 expect "missing context file" 1 "contextFileName:" -- "$(fixture ctx '.contextFileName = "MISSING.md"')"
 expect "undocumented top-level key" 1 "keys:" -- "$(fixture keys '.homepage = "https://goodsender.com"')"
@@ -118,6 +138,13 @@ cp "$w" "$tmp/write.before"
 expect "--write v1.2.3 again succeeds" 0 - -- --write "$w" v1.2.3
 if cmp -s "$w" "$tmp/write.before"; then pass "second --write is byte-identical"; else fail "second --write changed the file"; fi
 if [[ -z "$(find "$tmp/write" -name 'gemini-extension.json.*')" ]]; then pass "--write leaves no temp file"; else fail "--write left a temp file"; fi
+w="$(fixture write-newline '.version = "1.2.3\n"')"
+expect "--write replaces version with trailing newline" 0 - -- --write "$w" v1.2.3
+if jq -e '.version == "1.2.3"' "$w" >/dev/null; then
+  pass "--write removed the newline from the JSON version"
+else
+  fail "--write preserved the newline in the JSON version"
+fi
 
 # --- Scenario 5: release workflow job ---------------------------------------
 job="$(awk '/^  sync-gemini-extension:/{f=1; print; next} f && /^  [A-Za-z0-9_-]+:/{f=0} f' "$release_wf")"
@@ -153,6 +180,18 @@ fi
 for needle in confirm_action publish_post broadcast_post reannounce_post enqueue_ send_ delete_ draft; do
   if grep -q -- "$needle" "$root/GEMINI.md"; then pass "GEMINI.md mentions $needle"; else fail "GEMINI.md lacks $needle"; fi
 done
+# Join wrapped bullet lines so each action must carry its own preview/approval rule.
+rules="$(awk '/^- / {if (rule != "") print rule; rule=$0; next} /^  / {rule=rule " " $0; next} {if (rule != "") print rule; rule=""} END {if (rule != "") print rule}' "$root/GEMINI.md")"
+if grep -Eq 'preview.*email contents and recipients.*then.*confirm before.*enqueue_\*.*send_\*' <<<"$rules"; then
+  pass "email contents and recipients preview precedes confirmation for enqueue/send"
+else
+  fail "email tools lack preview then confirmation guidance"
+fi
+if grep -Eq 'preview.*deletion targets.*then.*confirm before.*delete_\*' <<<"$rules"; then
+  pass "deletion targets preview precedes confirmation for delete"
+else
+  fail "deletion tools lack preview then confirmation guidance"
+fi
 for needle in '### Gemini CLI' 'gemini extensions install https://github.com/good-sender/mcp' '/mcp auth goodsender' 'Antigravity CLI'; do
   if grep -qF -- "$needle" "$root/README.md"; then pass "README has: $needle"; else fail "README lacks: $needle"; fi
 done

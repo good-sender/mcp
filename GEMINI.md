@@ -9,8 +9,10 @@ first time a tool runs (`/mcp auth goodsender` to sign in again).
 - Create posts as drafts first (`create_post`); never publish in the same step.
 - Show the preview (`create_post_preview`) and the distribution plan (`get_post_distribution`)
   and ask the user to confirm before `publish_post`, `broadcast_post` or `reannounce_post`.
-- Ask the user to confirm before any `enqueue_*` or `send_*` email tool and before any
-  `delete_*` tool. The hosted server has no `confirm_action`: Gemini CLI's own tool
+- Show a preview of the email contents and recipients, then ask the user to confirm before
+  any `enqueue_*` or `send_*` email tool.
+- Show a preview of the deletion targets, then ask the user to confirm before any `delete_*` tool.
+- The hosted server has no `confirm_action`: Gemini CLI's own tool
   confirmation prompt is the approval step, so never bypass or pre-answer it.
 
 ## Email

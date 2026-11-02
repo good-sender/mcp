@@ -37,8 +37,10 @@
           "Email my latest post to newsletter subscribers."
         ],
         "brandColor": "#9C3A1A",
-        "composerIcon": "./assets/composer-icon.svg",
-        "logo": "./assets/logo.png"
+        "composerIcon": "./assets/composer-icon.png",
+        "composerIconDark": "./assets/composer-icon-dark.png",
+        "logo": "./assets/logo.png",
+        "logoDark": "./assets/logo-dark.png"
       },
       "onboardingSkill": "./skills/get-started/SKILL.md",
       "review": {

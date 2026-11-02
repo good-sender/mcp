@@ -19,4 +19,4 @@ Ground rules:
 
 - Never publish, send, delete or change the live site without the user's explicit go-ahead. Show a preview first (`create_post_preview`, `render_template_preview`).
 - GoodSender only emails recipients who opted in. Adding a recipient sends them a consent request; mail to them waits until they consent. Do not offer to work around consent.
-- Transactional templates (`send_consentless_email`) are for messages the recipient asked for, such as one-time codes and receipts, sent from the workspace's own verified domain.
+- Transactional templates (`send_consentless_email`) are for messages the recipient asked for, such as account notices and receipts, sent from the workspace's own verified domain.
